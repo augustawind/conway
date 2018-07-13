@@ -52,7 +52,7 @@ impl Grid {
         }
     }
 
-    pub fn as_vector(&self) -> Vec<Cell> {
+    pub fn all_cells(&self) -> Vec<Cell> {
         let ((x0, y0), (x1, y1)) = self.calculate_bounds();
         let mut result = Vec::new();
         for y in x0..=y1 {
@@ -229,7 +229,7 @@ mod test {
 
     #[test]
     fn test_from_str() {
-        let grid: Grid = &vec![
+        let grid: Grid = vec![
             format!("{}{}", CHAR_ALIVE, CHAR_ALIVE),
             format!("{}{}{}", CHAR_DEAD, CHAR_DEAD, CHAR_ALIVE),
             format!("{}{}{}", CHAR_DEAD, CHAR_ALIVE, CHAR_DEAD),
