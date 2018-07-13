@@ -3,6 +3,8 @@ use std::collections::HashSet;
 use std::fmt;
 use std::str::FromStr;
 
+use super::error::AppError;
+
 const CHAR_ALIVE: char = 'x';
 const CHAR_DEAD: char = '.';
 
@@ -133,11 +135,11 @@ impl fmt::Display for Grid {
 }
 
 impl FromStr for Grid {
-    type Err = String;
+    type Err = AppError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         if s.is_empty() {
-            return Err("string cannot be empty".to_string());
+            return Err(AppError("string cannot be empty".to_string()));
         }
 
         let lines: Vec<&str> = s.trim().lines().collect();
@@ -151,7 +153,7 @@ impl FromStr for Grid {
                 match ch {
                     CHAR_ALIVE => cells.push(Cell(x as i64, y as i64)),
                     CHAR_DEAD => (),
-                    _ => return Err(format!("unknown character: '{}'", ch)),
+                    _ => return Err(AppError(format!("unknown character: '{}'", ch))),
                 }
             }
         }

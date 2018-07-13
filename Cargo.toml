@@ -4,8 +4,8 @@ version = "0.1.0"
 authors = ["Dustin Rohde <dustin.rohde@gmail.com>"]
 
 [dependencies]
-cursive = "0.8.2"
 clap = "2.32.0"
+termion = "1.5.1"
 
 [dev-dependencies]
 maplit = "1.0.1"
