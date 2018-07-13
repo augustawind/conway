@@ -1,5 +1,4 @@
 use std::cmp;
-use std::collections::hash_set;
 use std::collections::HashSet;
 use std::fmt;
 
@@ -67,7 +66,7 @@ impl Grid {
     }
 
     fn calculate_bounds_raw(&self) -> ((i64, i64), (i64, i64)) {
-        let mut cells = self.iter();
+        let mut cells = self.cells.iter();
         if let Some(&Cell(x, y)) = cells.next() {
             let ((mut x0, mut y0), (mut x1, mut y1)) = ((x, y), (x, y));
             for &Cell(x, y) in cells {
@@ -108,6 +107,7 @@ impl Grid {
         self.cells.clear()
     }
 
+    // TODO: can this simply return a count?
     pub fn live_neighbors(&self, cell: &Cell) -> HashSet<Cell> {
         let Cell(x, y) = cell;
         let mut neighbors = HashSet::new();
@@ -121,10 +121,6 @@ impl Grid {
             }
         }
         neighbors
-    }
-
-    pub fn iter(&self) -> hash_set::Iter<Cell> {
-        self.cells.iter()
     }
 }
 

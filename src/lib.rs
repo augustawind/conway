@@ -2,6 +2,7 @@
 #[cfg(test)]
 extern crate maplit;
 
+pub mod app;
 pub mod game;
 pub mod grid;
 
