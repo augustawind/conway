@@ -1,3 +1,4 @@
+use std::cmp;
 use std::collections::hash_set;
 use std::collections::HashSet;
 use std::fmt;
@@ -15,11 +16,21 @@ impl fmt::Display for Cell {
 #[derive(Debug, Default, Clone)]
 pub struct Grid {
     cells: HashSet<Cell>,
+    pub min_width: u64,
+    pub min_height: u64,
 }
 
 impl fmt::Display for Grid {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let ((x0, y0), (x1, y1)) = self.calculate_bounds();
+        let ((mut x0, mut y0), (mut x1, mut y1)) = self.calculate_bounds();
+        x1 -= x0;
+        x0 = 0;
+        y1 -= y0;
+        y0 = 0;
+        let (min_x, min_y) = (self.min_width as i64 - 1, self.min_height as i64 - 1);
+        x1 = cmp::max(x1, min_x);
+        y1 = cmp::max(y1, min_y);
+
         let mut output = String::new();
         for y in y0..=y1 {
             for x in x0..=x1 {
@@ -27,14 +38,17 @@ impl fmt::Display for Grid {
             }
             output.push('\n');
         }
+
         write!(f, "{}", output)
     }
 }
 
 impl Grid {
-    pub fn new(cells: Vec<Cell>) -> Grid {
+    pub fn new(cells: Vec<Cell>, min_width: u64, min_height: u64) -> Grid {
         Grid {
             cells: cells.into_iter().collect(),
+            min_width,
+            min_height,
         }
     }
 
@@ -109,13 +123,13 @@ mod test {
     fn test_is_empty() {
         let grid: Grid = Default::default();
         assert!(grid.is_empty());
-        let grid = Grid::new(vec![Cell(0, 0)]);
+        let grid = Grid::new(vec![Cell(0, 0)], 0, 0);
         assert!(!grid.is_empty());
     }
 
     #[test]
     fn test_is_alive() {
-        let grid = Grid::new(vec![Cell(-1, 4), Cell(8, 8)]);
+        let grid = Grid::new(vec![Cell(-1, 4), Cell(8, 8)], 0, 0);
         assert!(&grid.is_alive(&Cell(-1, 4)));
         assert!(&grid.is_alive(&Cell(8, 8)));
         assert!(!&grid.is_alive(&Cell(8, 4)));
@@ -134,7 +148,11 @@ mod test {
 
     #[test]
     fn test_live_neighbors() {
-        let grid = Grid::new(vec![Cell(-1, -1), Cell(-1, -2), Cell(0, 0), Cell(1, 0)]);
+        let grid = Grid::new(
+            vec![Cell(-1, -1), Cell(-1, -2), Cell(0, 0), Cell(1, 0)],
+            0,
+            0,
+        );
         assert_eq!(
             grid.live_neighbors(&Cell(0, 0)),
             hashset![Cell(-1, -1), Cell(1, 0)],
@@ -150,11 +168,15 @@ mod test {
     #[test]
     fn test_calculate_bounds() {
         assert_eq!(
-            Grid::new(vec![Cell(2, 1), Cell(-3, 0), Cell(-2, 1), Cell(-2, 0)]).calculate_bounds(),
+            Grid::new(
+                vec![Cell(2, 1), Cell(-3, 0), Cell(-2, 1), Cell(-2, 0)],
+                0,
+                0
+            ).calculate_bounds(),
             ((-3, 0), (2, 1))
         );
         assert_eq!(
-            Grid::new(vec![Cell(53, 4), Cell(2, 1), Cell(-12, 33)]).calculate_bounds(),
+            Grid::new(vec![Cell(53, 4), Cell(2, 1), Cell(-12, 33)], 0, 0).calculate_bounds(),
             ((-12, 1), (53, 33))
         );
     }
