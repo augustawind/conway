@@ -49,8 +49,19 @@ impl Grid {
         }
     }
 
+    pub fn as_vector(&self) -> Vec<Cell> {
+        let ((x1, y1), _) = self.calculate_bounds();
+        let mut result = Vec::new();
+        for y in 0..=y1 {
+            for x in 0..=x1 {
+                result.push(Cell(x, y));
+            }
+        }
+        result
+    }
+
     pub fn calculate_bounds(&self) -> ((i64, i64), (i64, i64)) {
-        let ((mut x0, mut y0), (mut x1, mut y1)) = self.calculate_bounds_raw();
+        let ((x0, y0), (mut x1, mut y1)) = self.calculate_bounds_raw();
         let (min_x, min_y) = (self.min_width as i64 - 1, self.min_height as i64 - 1);
         let (dx, dy) = (-x0, -y0);
         x1 = cmp::max(x1 + dx, min_x);
