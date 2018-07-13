@@ -5,6 +5,8 @@ use std::path::Path;
 use std::thread;
 use std::time::Duration;
 
+use termion::event::Key;
+use termion::input::TermRead;
 use termion::raw::IntoRawMode;
 use termion::{clear, cursor, style};
 
@@ -27,13 +29,23 @@ impl App {
     }
 
     pub fn run(&self, game: Game) -> AppResult<()> {
-        let stdin = io::stdin();
         let mut stdout = io::stdout().into_raw_mode()?;
 
-        for output in game {
-            println!("{}", output);
-            thread::sleep(Duration::from_millis(1000));
-            break;
+        'Outer: for output in game {
+            write!(stdout, "{}{}", clear::All, cursor::Hide)?;
+
+            for (y, line) in output.lines().enumerate() {
+                write!(stdout, "{}{}", cursor::Goto(1, y as u16 + 1), line)?;
+            }
+            stdout.flush()?;
+
+            for c in io::stdin().keys() {
+                match c? {
+                    Key::Char('q') | Key::Esc | Key::Ctrl('c') => break 'Outer,
+                    Key::Char(' ') => break,
+                    _ => (),
+                }
+            }
         }
         write!(
             stdout,

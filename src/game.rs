@@ -4,7 +4,7 @@ use super::grid::{Cell, Grid};
 
 #[derive(Debug)]
 pub struct Game {
-    grid: Grid,
+    pub grid: Grid,
     swap: Grid,
 }
 
