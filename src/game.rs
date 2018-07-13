@@ -1,5 +1,6 @@
 use std::default::Default;
 use std::mem;
+use std::thread;
 
 use super::grid::{Cell, Grid};
 
@@ -17,8 +18,11 @@ impl Game {
     }
 
     pub fn run(&mut self) {
+        println!("{}", self.grid);
         while !self.grid.is_empty() {
             self.tick();
+            println!("{}", self.grid);
+            thread::sleep_ms(1000);
         }
     }
 

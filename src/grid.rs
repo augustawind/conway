@@ -17,6 +17,37 @@ pub struct Grid {
     cells: HashSet<Cell>,
 }
 
+impl fmt::Display for Grid {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let mut min_x = 0;
+        let mut min_y = 0;
+        let mut max_x = 0;
+        let mut max_y = 0;
+        for &Cell(x, y) in self.iter() {
+            if x < min_x {
+                min_x = x;
+            } else if x > max_x {
+                max_x = x;
+            }
+            if y < min_y {
+                min_y = y;
+            } else if y > max_y {
+                max_y = y;
+            }
+        }
+
+        let mut output = String::new();
+        for y in min_y..=max_y {
+            for x in min_x..=max_x {
+                let cell = Cell(x, y);
+                output.push(if self.is_alive(&cell) { 'x' } else { '.' });
+            }
+            output.push('\n');
+        }
+        write!(f, "{}", output)
+    }
+}
+
 impl Grid {
     pub fn new(cells: Vec<Cell>) -> Grid {
         Grid {
