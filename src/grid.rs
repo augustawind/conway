@@ -23,26 +23,6 @@ pub struct Grid {
     pub min_height: u64,
 }
 
-impl fmt::Display for Grid {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let ((x0, y0), (x1, y1)) = self.calculate_bounds();
-
-        let mut output = String::new();
-        for y in y0..=y1 {
-            for x in x0..=x1 {
-                output.push(if self.is_alive(&Cell(x, y)) {
-                    CHAR_ALIVE
-                } else {
-                    CHAR_DEAD
-                });
-            }
-            output.push('\n');
-        }
-
-        write!(f, "{}", output)
-    }
-}
-
 impl Grid {
     pub fn new(cells: Vec<Cell>, min_width: u64, min_height: u64) -> Grid {
         Grid {
@@ -129,6 +109,26 @@ impl Grid {
             }
         }
         neighbors
+    }
+}
+
+impl fmt::Display for Grid {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let ((x0, y0), (x1, y1)) = self.calculate_bounds();
+
+        let mut output = String::new();
+        for y in y0..=y1 {
+            for x in x0..=x1 {
+                output.push(if self.is_alive(&Cell(x, y)) {
+                    CHAR_ALIVE
+                } else {
+                    CHAR_DEAD
+                });
+            }
+            output.push('\n');
+        }
+
+        write!(f, "{}", output)
     }
 }
 
