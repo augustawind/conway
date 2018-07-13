@@ -1,6 +1,7 @@
 use std::cmp;
 use std::collections::HashSet;
 use std::fmt;
+use std::str::FromStr;
 
 const CHAR_ALIVE: char = 'x';
 const CHAR_DEAD: char = '.';
@@ -49,30 +50,6 @@ impl Grid {
             min_width,
             min_height,
         }
-    }
-
-    pub fn from_str(s: &str) -> Result<Grid, String> {
-        if s.is_empty() {
-            return Err("string cannot be empty".to_string());
-        }
-
-        let lines: Vec<&str> = s.trim().lines().collect();
-        let height = lines.len();
-        let mut width = lines[0].len();
-
-        let mut cells = Vec::new();
-        for (y, line) in lines.iter().enumerate() {
-            width = cmp::max(width, line.len());
-            for (x, ch) in line.chars().enumerate() {
-                match ch {
-                    CHAR_ALIVE => cells.push(Cell(x as i64, y as i64)),
-                    CHAR_DEAD => (),
-                    _ => return Err(format!("unknown character: '{}'", ch)),
-                }
-            }
-        }
-
-        Ok(Grid::new(cells, width as u64, height as u64))
     }
 
     pub fn as_vector(&self) -> Vec<Cell> {
@@ -155,6 +132,34 @@ impl Grid {
     }
 }
 
+impl FromStr for Grid {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        if s.is_empty() {
+            return Err("string cannot be empty".to_string());
+        }
+
+        let lines: Vec<&str> = s.trim().lines().collect();
+        let height = lines.len();
+        let mut width = lines[0].len();
+
+        let mut cells = Vec::new();
+        for (y, line) in lines.iter().enumerate() {
+            width = cmp::max(width, line.len());
+            for (x, ch) in line.chars().enumerate() {
+                match ch {
+                    CHAR_ALIVE => cells.push(Cell(x as i64, y as i64)),
+                    CHAR_DEAD => (),
+                    _ => return Err(format!("unknown character: '{}'", ch)),
+                }
+            }
+        }
+
+        Ok(Grid::new(cells, width as u64, height as u64))
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -223,17 +228,20 @@ mod test {
     }
 
     #[test]
-    fn test_from_string() {
-        let grid = Grid::from_str(
-            &vec![
-                format!("{}{}", CHAR_ALIVE, CHAR_ALIVE),
-                format!("{}{}{}", CHAR_DEAD, CHAR_DEAD, CHAR_ALIVE),
-                format!("{}{}{}", CHAR_DEAD, CHAR_ALIVE, CHAR_DEAD),
-            ].join("\n"),
-        ).unwrap();
+    fn test_from_str() {
+        let grid: Grid = &vec![
+            format!("{}{}", CHAR_ALIVE, CHAR_ALIVE),
+            format!("{}{}{}", CHAR_DEAD, CHAR_DEAD, CHAR_ALIVE),
+            format!("{}{}{}", CHAR_DEAD, CHAR_ALIVE, CHAR_DEAD),
+        ].join("\n")
+            .parse()
+            .unwrap();
         assert_eq!(
             grid,
-            Grid::new(vec![Cell(0, 0), Cell(1, 0), Cell(2, 1), Cell(1, 2)], 3, 3,)
+            Grid::new(vec![Cell(0, 0), Cell(1, 0), Cell(2, 1), Cell(1, 2)], 3, 3),
         );
+
+        assert!(Grid::from_str("").is_err());
+        assert!(Grid::from_str("abc\ndef").is_err())
     }
 }
