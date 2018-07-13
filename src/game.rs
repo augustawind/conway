@@ -1,12 +1,23 @@
 use std::mem;
-use std::thread;
-use std::time::Duration;
 
 use super::grid::{Cell, Grid};
 
+#[derive(Debug)]
 pub struct Game {
     grid: Grid,
     swap: Grid,
+}
+
+impl Iterator for Game {
+    type Item = String;
+    fn next(&mut self) -> Option<Self::Item> {
+        if !self.grid.is_empty() {
+            self.tick();
+            Some(self.draw())
+        } else {
+            None
+        }
+    }
 }
 
 impl Game {
@@ -17,15 +28,6 @@ impl Game {
 
     pub fn draw(&self) -> String {
         self.grid.to_string()
-    }
-
-    pub fn run(&mut self) {
-        println!("{}", self.grid);
-        while !self.grid.is_empty() {
-            self.tick();
-            println!("{}", self.grid);
-            thread::sleep(Duration::from_millis(1000));
-        }
     }
 
     pub fn tick(&mut self) {
