@@ -22,16 +22,12 @@ pub struct Grid {
 
 impl fmt::Display for Grid {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let ((x1, y1), (dx, dy)) = self.calculate_bounds();
+        let ((x0, y0), (x1, y1)) = self.calculate_bounds();
 
         let mut output = String::new();
-        for y in 0..=y1 {
-            for x in 0..=x1 {
-                output.push(if self.is_alive(&Cell(x + dx, y + dy)) {
-                    'x'
-                } else {
-                    '.'
-                });
+        for y in y0..=y1 {
+            for x in x0..=x1 {
+                output.push(if self.is_alive(&Cell(x, y)) { 'x' } else { '.' });
             }
             output.push('\n');
         }
@@ -50,10 +46,10 @@ impl Grid {
     }
 
     pub fn as_vector(&self) -> Vec<Cell> {
-        let ((x1, y1), _) = self.calculate_bounds();
+        let ((x0, y0), (x1, y1)) = self.calculate_bounds();
         let mut result = Vec::new();
-        for y in 0..=y1 {
-            for x in 0..=x1 {
+        for y in x0..=y1 {
+            for x in y0..=x1 {
                 result.push(Cell(x, y));
             }
         }
@@ -61,12 +57,14 @@ impl Grid {
     }
 
     pub fn calculate_bounds(&self) -> ((i64, i64), (i64, i64)) {
-        let ((x0, y0), (mut x1, mut y1)) = self.calculate_bounds_raw();
+        let ((mut x0, mut y0), (mut x1, mut y1)) = self.calculate_bounds_raw();
         let (min_x, min_y) = (self.min_width as i64 - 1, self.min_height as i64 - 1);
         let (dx, dy) = (-x0, -y0);
+        x0 = cmp::min(x0, 0);
+        y0 = cmp::min(y0, 0);
         x1 = cmp::max(x1 + dx, min_x);
         y1 = cmp::max(y1 + dy, min_y);
-        ((x1, y1), (dx, dy))
+        ((x0, y0), (x1, y1))
     }
 
     fn calculate_bounds_raw(&self) -> ((i64, i64), (i64, i64)) {

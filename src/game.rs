@@ -78,10 +78,4 @@ mod test {
             "a live cell with < 2 live neighbors should die"
         );
     }
-
-    #[test]
-    fn test_tick() {
-        let grid = Grid::new(vec![Cell(1, 0), Cell(1, 1), Cell(1, 2)], 0, 0);
-        let game = Game::new(Grid::new(vec![Cell(1, 0), Cell(1, 1), Cell(1, 2)], 0, 0));
-    }
 }
