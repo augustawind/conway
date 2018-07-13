@@ -15,6 +15,10 @@ impl Game {
         Game { grid, swap }
     }
 
+    pub fn draw(&self) -> String {
+        self.grid.to_string()
+    }
+
     pub fn run(&mut self) {
         println!("{}", self.grid);
         while !self.grid.is_empty() {
