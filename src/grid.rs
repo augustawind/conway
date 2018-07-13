@@ -23,8 +23,7 @@ impl fmt::Display for Grid {
         let mut output = String::new();
         for y in y0..=y1 {
             for x in x0..=x1 {
-                let cell = Cell(x, y);
-                output.push(if self.is_alive(&cell) { 'x' } else { '.' });
+                output.push(if self.is_alive(&Cell(x, y)) { 'x' } else { '.' });
             }
             output.push('\n');
         }
@@ -39,7 +38,7 @@ impl Grid {
         }
     }
 
-    fn calculate_bounds(&self) -> ((i64, i64), (i64, i64)) {
+    pub fn calculate_bounds(&self) -> ((i64, i64), (i64, i64)) {
         let mut cells = self.iter();
         if let Some(&Cell(x, y)) = cells.next() {
             let ((mut x0, mut y0), (mut x1, mut y1)) = ((x, y), (x, y));
