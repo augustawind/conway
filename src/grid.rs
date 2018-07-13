@@ -57,14 +57,13 @@ impl Grid {
     }
 
     pub fn calculate_bounds(&self) -> ((i64, i64), (i64, i64)) {
-        let ((mut x0, mut y0), (mut x1, mut y1)) = self.calculate_bounds_raw();
+        let ((x0, y0), (x1, y1)) = self.calculate_bounds_raw();
         let (min_x, min_y) = (self.min_width as i64 - 1, self.min_height as i64 - 1);
-        let (dx, dy) = (-x0, -y0);
-        x0 = cmp::min(x0, 0);
-        y0 = cmp::min(y0, 0);
-        x1 = cmp::max(x1 + dx, min_x);
-        y1 = cmp::max(y1 + dy, min_y);
-        ((x0, y0), (x1, y1))
+        let (dx, dy) = (cmp::min(-x0, 0), cmp::min(-y0, 0));
+        (
+            (cmp::min(x0, 0), cmp::min(y0, 0)),
+            (cmp::max(x1 + dx, min_x), cmp::max(y1 + dy, min_y)),
+        )
     }
 
     fn calculate_bounds_raw(&self) -> ((i64, i64), (i64, i64)) {
@@ -192,7 +191,7 @@ mod test {
         );
         assert_eq!(
             Grid::new(vec![Cell(53, 4), Cell(2, 1), Cell(-12, 33)], 0, 0).calculate_bounds(),
-            ((-12, 1), (53, 33))
+            ((-12, 0), (53, 32))
         );
     }
 }
