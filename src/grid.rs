@@ -19,10 +19,10 @@ pub struct Grid {
 
 impl fmt::Display for Grid {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let ((min_x, min_y), (max_x, max_y)) = self.calculate_bounds();
+        let ((x0, y0), (x1, y1)) = self.calculate_bounds();
         let mut output = String::new();
-        for y in min_y..=max_y {
-            for x in min_x..=max_x {
+        for y in y0..=y1 {
+            for x in x0..=x1 {
                 let cell = Cell(x, y);
                 output.push(if self.is_alive(&cell) { 'x' } else { '.' });
             }
@@ -42,20 +42,20 @@ impl Grid {
     fn calculate_bounds(&self) -> ((i64, i64), (i64, i64)) {
         let mut cells = self.iter();
         if let Some(&Cell(x, y)) = cells.next() {
-            let ((mut min_x, mut min_y), (mut max_x, mut max_y)) = ((x, y), (x, y));
+            let ((mut x0, mut y0), (mut x1, mut y1)) = ((x, y), (x, y));
             for &Cell(x, y) in cells {
-                if x < min_x {
-                    min_x = x;
-                } else if x > max_x {
-                    max_x = x;
+                if x < x0 {
+                    x0 = x;
+                } else if x > x1 {
+                    x1 = x;
                 }
-                if y < min_y {
-                    min_y = y;
-                } else if y > max_y {
-                    max_y = y;
+                if y < y0 {
+                    y0 = y;
+                } else if y > y1 {
+                    y1 = y;
                 }
             }
-            ((min_x, min_y), (max_x, max_y))
+            ((x0, y0), (x1, y1))
         } else {
             ((0, 0), (0, 0))
         }
