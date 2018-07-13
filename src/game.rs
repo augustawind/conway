@@ -33,7 +33,7 @@ impl Game {
                 self.swap.set_alive(*cell);
             }
         }
-        self.grid = Default::default();
+        self.grid.clear();
         mem::swap(&mut self.grid, &mut self.swap);
     }
 

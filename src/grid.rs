@@ -19,23 +19,7 @@ pub struct Grid {
 
 impl fmt::Display for Grid {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let mut min_x = 0;
-        let mut min_y = 0;
-        let mut max_x = 0;
-        let mut max_y = 0;
-        for &Cell(x, y) in self.iter() {
-            if x < min_x {
-                min_x = x;
-            } else if x > max_x {
-                max_x = x;
-            }
-            if y < min_y {
-                min_y = y;
-            } else if y > max_y {
-                max_y = y;
-            }
-        }
-
+        let ((min_x, min_y), (max_x, max_y)) = self.calculate_bounds();
         let mut output = String::new();
         for y in min_y..=max_y {
             for x in min_x..=max_x {
@@ -55,6 +39,28 @@ impl Grid {
         }
     }
 
+    fn calculate_bounds(&self) -> ((i64, i64), (i64, i64)) {
+        let mut cells = self.iter();
+        if let Some(&Cell(x, y)) = cells.next() {
+            let ((mut min_x, mut min_y), (mut max_x, mut max_y)) = ((x, y), (x, y));
+            for &Cell(x, y) in cells {
+                if x < min_x {
+                    min_x = x;
+                } else if x > max_x {
+                    max_x = x;
+                }
+                if y < min_y {
+                    min_y = y;
+                } else if y > max_y {
+                    max_y = y;
+                }
+            }
+            ((min_x, min_y), (max_x, max_y))
+        } else {
+            ((0, 0), (0, 0))
+        }
+    }
+
     pub fn is_empty(&self) -> bool {
         self.cells.is_empty()
     }
@@ -69,6 +75,10 @@ impl Grid {
 
     pub fn set_dead(&mut self, cell: &Cell) -> bool {
         self.cells.remove(cell)
+    }
+
+    pub fn clear(&mut self) {
+        self.cells.clear()
     }
 
     pub fn live_neighbors(&self, cell: &Cell) -> HashSet<Cell> {
@@ -92,7 +102,7 @@ impl Grid {
 }
 
 #[cfg(test)]
-mod tests {
+mod test {
     use super::*;
     use std::default::Default;
 
@@ -125,7 +135,7 @@ mod tests {
 
     #[test]
     fn test_live_neighbors() {
-        let grid: Grid = Grid::new(vec![Cell(-1, -1), Cell(-1, -2), Cell(0, 0), Cell(1, 0)]);
+        let grid = Grid::new(vec![Cell(-1, -1), Cell(-1, -2), Cell(0, 0), Cell(1, 0)]);
         assert_eq!(
             grid.live_neighbors(&Cell(0, 0)),
             hashset![Cell(-1, -1), Cell(1, 0)],
@@ -136,5 +146,17 @@ mod tests {
             hashset![Cell(-1, -2)],
             "it should work for a dead cell"
         )
+    }
+
+    #[test]
+    fn test_calculate_bounds() {
+        assert_eq!(
+            Grid::new(vec![Cell(2, 1), Cell(-3, 0), Cell(-2, 1), Cell(-2, 0)]).calculate_bounds(),
+            ((-3, 0), (2, 1))
+        );
+        assert_eq!(
+            Grid::new(vec![Cell(53, 4), Cell(2, 1), Cell(-12, 33)]).calculate_bounds(),
+            ((-12, 1), (53, 33))
+        );
     }
 }
