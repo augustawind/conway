@@ -1,3 +1,4 @@
+extern crate clap;
 extern crate conway;
 
 use conway::{Cell, Game, Grid};
