@@ -2,6 +2,8 @@ use std::error::Error;
 use std::fmt;
 use std::io;
 
+pub type AppResult<T> = Result<T, AppError>;
+
 #[derive(Debug)]
 pub struct AppError(pub String);
 

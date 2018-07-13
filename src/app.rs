@@ -8,7 +8,7 @@ use std::time::Duration;
 use termion::raw::IntoRawMode;
 use termion::{clear, cursor, style};
 
-use super::{AppError, Game, Grid};
+use super::{AppResult, Game, Grid};
 
 pub struct App {}
 
@@ -17,7 +17,7 @@ impl App {
         App {}
     }
 
-    pub fn run_from_path<P: AsRef<Path>>(&self, path: P) -> Result<(), AppError> {
+    pub fn run_from_path<P: AsRef<Path>>(&self, path: P) -> AppResult<()> {
         let mut f = File::open(path)?;
         let mut pattern = String::new();
         f.read_to_string(&mut pattern)?;
@@ -26,7 +26,7 @@ impl App {
         self.run(game)
     }
 
-    pub fn run(&self, game: Game) -> Result<(), AppError> {
+    pub fn run(&self, game: Game) -> AppResult<()> {
         let stdin = io::stdin();
         let mut stdout = io::stdout().into_raw_mode()?;
 
