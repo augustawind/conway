@@ -1,9 +1,18 @@
+use std::collections::hash_set;
 use std::collections::HashSet;
+use std::fmt;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Cell(pub i64, pub i64);
 
-#[derive(Debug, Default)]
+impl fmt::Display for Cell {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let Cell(x, y) = self;
+        write!(f, "({}, {})", x, y)
+    }
+}
+
+#[derive(Debug, Default, Clone)]
 pub struct Grid {
     cells: HashSet<Cell>,
 }
@@ -44,6 +53,10 @@ impl Grid {
             }
         }
         neighbors
+    }
+
+    pub fn iter(&self) -> hash_set::Iter<Cell> {
+        self.cells.iter()
     }
 }
 
