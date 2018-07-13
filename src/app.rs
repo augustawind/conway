@@ -1,5 +1,6 @@
 use std::fs::File;
 use std::io::prelude::*;
+use std::path::Path;
 use std::thread;
 use std::time::Duration;
 
@@ -16,7 +17,7 @@ impl App {
         App {}
     }
 
-    pub fn start_pattern(&self, path: &str) -> Result<(), String> {
+    pub fn run_from_path<P: AsRef<Path>>(&self, path: P) -> Result<(), String> {
         let mut f = File::open(path).map_err(|e| e.to_string())?;
         let mut pattern = String::new();
         f.read_to_string(&mut pattern).map_err(|e| e.to_string())?;
@@ -24,7 +25,7 @@ impl App {
         let game = Game::new(grid);
         for output in game {
             println!("{}", output);
-            thread::sleep(Duration::from_millis(1));
+            thread::sleep(Duration::from_millis(1000));
         }
         Ok(())
     }

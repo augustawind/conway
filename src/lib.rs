@@ -8,5 +8,6 @@ pub mod app;
 pub mod game;
 pub mod grid;
 
+pub use app::*;
 pub use game::*;
 pub use grid::*;
