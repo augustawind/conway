@@ -15,12 +15,12 @@ impl Grid {
         }
     }
 
-    pub fn is_alive(&self, cell: &Cell) -> bool {
-        self.cells.contains(cell)
+    pub fn is_empty(&self) -> bool {
+        self.cells.is_empty()
     }
 
-    pub fn is_dead(&self, cell: &Cell) -> bool {
-        !self.is_alive(cell)
+    pub fn is_alive(&self, cell: &Cell) -> bool {
+        self.cells.contains(cell)
     }
 
     pub fn set_alive(&mut self, cell: Cell) -> bool {
@@ -53,6 +53,14 @@ mod tests {
     use std::default::Default;
 
     #[test]
+    fn test_is_empty() {
+        let grid: Grid = Default::default();
+        assert!(grid.is_empty());
+        let grid = Grid::new(vec![Cell(0, 0)]);
+        assert!(!grid.is_empty());
+    }
+
+    #[test]
     fn test_is_alive() {
         let grid = Grid::new(vec![Cell(-1, 4), Cell(8, 8)]);
         assert!(&grid.is_alive(&Cell(-1, 4)));
@@ -61,7 +69,7 @@ mod tests {
     }
 
     #[test]
-    fn test_set_alive() {
+    fn test_set_alive_or_dead() {
         let mut grid: Grid = Default::default();
         let cell = Cell(3, -3);
         assert!(!&grid.is_alive(&cell));
