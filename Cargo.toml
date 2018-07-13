@@ -1,0 +1,7 @@
+[package]
+name = "conway"
+version = "0.1.0"
+authors = ["Dustin Rohde <dustin.rohde@gmail.com>"]
+
+[dev-dependencies]
+maplit = "1.0.1"
