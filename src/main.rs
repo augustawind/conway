@@ -2,15 +2,16 @@ extern crate clap;
 extern crate conway;
 
 use std::path::Path;
+use std::time::Duration;
 
-use clap::{App as CLI, Arg};
-use conway::App;
+use clap::Arg;
+use conway::{App, Config};
 
 static SAMPLE_DIR: &str = "./sample_patterns";
 static SAMPLE_CHOICES: &[&str] = &["beacon", "glider", "oscillator", "toad"];
 
 fn main() {
-    let matches = CLI::new("Conway's Game of Life")
+    let matches = clap::App::new("Conway's Game of Life")
         .arg(
             Arg::with_name("file")
                 .long("file")
@@ -27,7 +28,23 @@ fn main() {
                 .possible_values(SAMPLE_CHOICES)
                 .help("load a sample pattern"),
         )
+        .arg(
+            Arg::with_name("raw")
+                .long("raw")
+                .help("stream raw output to stdout"),
+        )
+        .arg(
+            Arg::with_name("delay")
+                .long("delay")
+                .default_value("500")
+                .help("delay (ms) between ticks"),
+        )
         .get_matches();
+
+    let mut config = Config::default();
+    if let Ok(ms) = matches.value_of("delay").unwrap().parse() {
+        config.stream_delay = Duration::from_millis(ms);
+    }
 
     let mut app = if let Some(file) = matches.value_of("file") {
         let path = Path::new(file);
@@ -39,5 +56,9 @@ fn main() {
         panic!("no pattern provided!");
     };
 
-    app.run().unwrap();
+    if matches.is_present("raw") {
+        app.run_as_stream().unwrap();
+    } else {
+        app.run().unwrap();
+    }
 }

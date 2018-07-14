@@ -4,6 +4,8 @@ use std::fs::File;
 use std::io;
 use std::io::prelude::*;
 use std::path::Path;
+use std::thread;
+use std::time::Duration;
 
 use termion::event::Key;
 use termion::input::TermRead;
@@ -92,14 +94,36 @@ impl Menu {
     }
 }
 
+pub struct Config {
+    pub stream_delay: Duration,
+}
+
+impl Default for Config {
+    fn default() -> Config {
+        Config {
+            stream_delay: Duration::from_millis(500),
+        }
+    }
+}
+
 pub struct App {
     game: Game,
     menu: Menu,
+    opts: Config,
 }
 
 impl App {
-    pub fn new(game: Game, menu: Menu) -> App {
-        App { game, menu }
+    pub fn new(game: Game) -> App {
+        App {
+            game: game,
+            menu: Menu::new(0, 0, 20, 20, 1, 1),
+            opts: Default::default(),
+        }
+    }
+
+    pub fn with_config(&mut self, opts: Config) -> &App {
+        self.opts = opts;
+        self
     }
 
     pub fn from_path<P: AsRef<Path>>(path: P) -> AppResult<App> {
@@ -108,8 +132,7 @@ impl App {
         f.read_to_string(&mut pattern)?;
         let grid: Grid = pattern.parse()?;
         let game = Game::new(grid);
-        let menu = Menu::new(0, 0, 20, 20, 1, 1);
-        Ok(App::new(game, menu))
+        Ok(App::new(game))
     }
 
     pub fn run(&mut self) -> AppResult<()> {
@@ -118,7 +141,6 @@ impl App {
         'Outer: while !self.game.is_over() {
             write!(stdout, "{}{}", clear::All, cursor::Hide)?;
 
-            self.game.tick();
             for (y, line) in self.game.draw().lines().enumerate() {
                 write!(stdout, "{}{}", cursor::Goto(1, 1 + y as u16), line)?;
             }
@@ -131,11 +153,23 @@ impl App {
                     _ => (),
                 }
             }
+
+            self.game.tick();
         }
         self.teardown(&mut stdout)
     }
 
-    pub fn run_feed(&mut self) -> AppResult<()> {
+    pub fn run_as_stream(&mut self) -> AppResult<()> {
+        let mut stdout = io::stdout();
+        while !self.game.is_over() {
+            for line in self.game.draw().lines() {
+                write!(stdout, "{}\n", line)?;
+            }
+            write!(stdout, "\n")?;
+            stdout.flush()?;
+            self.game.tick();
+            thread::sleep(self.opts.stream_delay);
+        }
         Ok(())
     }
 
