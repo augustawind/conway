@@ -37,8 +37,8 @@ impl Grid {
     pub fn all_cells(&self) -> Vec<Cell> {
         let ((x0, y0), (x1, y1)) = self.calculate_bounds();
         let mut result = Vec::new();
-        for y in x0..=y1 {
-            for x in y0..=x1 {
+        for y in y0..=y1 {
+            for x in x0..=x1 {
                 result.push(Cell(x, y));
             }
         }
@@ -244,6 +244,11 @@ mod test {
             Grid::new(vec![Cell(53, 4), Cell(2, 1), Cell(-12, 33)], 88, 32).calculate_bounds(),
             ((-12, 1), (76, 33)),
             "should not raise the upper bounds if they are larger than min_width and min_height"
+        );
+        assert_eq!(
+            Grid::new(vec![Cell(2, 3), Cell(3, 3), Cell(5, 4), Cell(4, 2)], 10, 10)
+                .calculate_bounds(),
+            ((2, 2), (12, 12)),
         );
     }
 
