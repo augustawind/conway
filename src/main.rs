@@ -29,7 +29,7 @@ fn main() {
         )
         .get_matches();
 
-    let app = if let Some(file) = matches.value_of("file") {
+    let mut app = if let Some(file) = matches.value_of("file") {
         let path = Path::new(file);
         App::from_path(path).unwrap()
     } else if let Some(sample) = matches.value_of("sample") {

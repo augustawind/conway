@@ -8,22 +8,14 @@ pub struct Game {
     swap: Grid,
 }
 
-impl Iterator for Game {
-    type Item = String;
-    fn next(&mut self) -> Option<Self::Item> {
-        if !self.grid.is_empty() {
-            self.tick();
-            Some(self.draw())
-        } else {
-            None
-        }
-    }
-}
-
 impl Game {
     pub fn new(grid: Grid) -> Game {
         let swap = Grid::new(Vec::new(), grid.min_width, grid.min_height);
         Game { grid, swap }
+    }
+
+    pub fn is_over(&self) -> bool {
+        self.grid.is_empty()
     }
 
     pub fn draw(&self) -> String {
@@ -52,6 +44,18 @@ impl Game {
                 3 => true,
                 _ => false,
             }
+        }
+    }
+}
+
+impl Iterator for Game {
+    type Item = String;
+    fn next(&mut self) -> Option<Self::Item> {
+        if !self.grid.is_empty() {
+            self.tick();
+            Some(self.draw())
+        } else {
+            None
         }
     }
 }

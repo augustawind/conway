@@ -7,7 +7,7 @@ use std::path::Path;
 
 use termion::event::Key;
 use termion::input::TermRead;
-use termion::raw::IntoRawMode;
+use termion::raw::{IntoRawMode, RawTerminal};
 use termion::{clear, cursor, style};
 
 use super::{AppResult, Game, Grid};
@@ -112,13 +112,14 @@ impl App {
         Ok(App::new(game, menu))
     }
 
-    pub fn run(self) -> AppResult<()> {
+    pub fn run(&mut self) -> AppResult<()> {
         let mut stdout = io::stdout().into_raw_mode()?;
 
-        'Outer: for output in self.game {
+        'Outer: while !self.game.is_over() {
             write!(stdout, "{}{}", clear::All, cursor::Hide)?;
 
-            for (y, line) in output.lines().enumerate() {
+            self.game.tick();
+            for (y, line) in self.game.draw().lines().enumerate() {
                 write!(stdout, "{}{}", cursor::Goto(1, 1 + y as u16), line)?;
             }
             stdout.flush()?;
@@ -131,13 +132,15 @@ impl App {
                 }
             }
         }
-        write!(
-            stdout,
-            "{}{}{}",
-            clear::All,
-            style::Reset,
-            cursor::Goto(1, 1),
-        )?;
+        self.teardown(&mut stdout)
+    }
+
+    pub fn run_feed(&mut self) -> AppResult<()> {
+        Ok(())
+    }
+
+    pub fn teardown(&self, out: &mut RawTerminal<io::Stdout>) -> AppResult<()> {
+        write!(out, "{}{}{}", clear::All, style::Reset, cursor::Goto(1, 1),)?;
         Ok(())
     }
 }
