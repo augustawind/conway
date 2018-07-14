@@ -1,9 +1,9 @@
+use std::cmp;
+use std::fmt;
 use std::fs::File;
 use std::io;
 use std::io::prelude::*;
 use std::path::Path;
-use std::thread;
-use std::time::Duration;
 
 use termion::event::Key;
 use termion::input::TermRead;
@@ -12,30 +12,114 @@ use termion::{clear, cursor, style};
 
 use super::{AppResult, Game, Grid};
 
-pub struct App {}
+/// A Rect is a tuple containing the (x-origin, y-origin, width, height) of a
+/// rectangle.
+type Rect = (i32, i32, i32, i32);
 
-impl App {
-    pub fn new() -> App {
-        App {}
+pub enum Sym {
+    BoxTopLeft,
+    BoxTopRight,
+    BoxBottomLeft,
+    BoxBottomRight,
+    BoxVertical,
+    BoxHorizontal,
+}
+
+impl fmt::Display for Sym {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        use Sym::*;
+        write!(
+            f,
+            "{}",
+            match self {
+                BoxTopLeft => '╔',
+                BoxTopRight => '╗',
+                BoxBottomLeft => '╚',
+                BoxBottomRight => '╝',
+                BoxVertical => '║',
+                BoxHorizontal => '═',
+            }
+        )
+    }
+}
+
+pub struct Menu {
+    x0: u16,
+    y0: u16,
+    width: u16,
+    height: u16,
+    padding: u16,
+    margin: u16,
+}
+
+impl Menu {
+    pub fn new(x0: u16, y0: u16, width: u16, height: u16, padding: u16, margin: u16) -> Menu {
+        Menu {
+            x0,
+            y0,
+            width,
+            height,
+            padding,
+            margin,
+        }
     }
 
-    pub fn run_from_path<P: AsRef<Path>>(&self, path: P) -> AppResult<()> {
+    pub fn draw_lines(&self) -> AppResult<Vec<String>> {
+        let (x1, y1) = (self.x0 + self.width - 1, self.y0 + self.height - 1);
+        let inner_width = cmp::min(0, self.width - 3) as usize;
+        let mut lines = Vec::new();
+        lines.push(format!(
+            "{}{}{}",
+            Sym::BoxTopLeft,
+            Sym::BoxHorizontal.to_string().repeat(inner_width),
+            Sym::BoxTopRight,
+        ));
+        for _ in self.y0 + 1..y1 {
+            lines.push(format!(
+                "{}{}{}",
+                Sym::BoxVertical,
+                " ".repeat(inner_width),
+                Sym::BoxVertical
+            ));
+        }
+        lines.push(format!(
+            "{}{}{}",
+            Sym::BoxBottomLeft,
+            Sym::BoxHorizontal.to_string().repeat(inner_width),
+            Sym::BoxBottomRight,
+        ));
+        Ok(lines)
+    }
+}
+
+pub struct App {
+    game: Game,
+    menu: Menu,
+}
+
+impl App {
+    pub fn new(game: Game, menu: Menu) -> App {
+        App { game, menu }
+    }
+
+    pub fn from_path<P: AsRef<Path>>(path: P) -> AppResult<App> {
         let mut f = File::open(path)?;
         let mut pattern = String::new();
         f.read_to_string(&mut pattern)?;
         let grid: Grid = pattern.parse()?;
         let game = Game::new(grid);
-        self.run(game)
+        let menu = Menu::new(0, 0, 20, 20, 1, 1);
+        Ok(App::new(game, menu))
     }
 
-    pub fn run(&self, game: Game) -> AppResult<()> {
+    pub fn run(self) -> AppResult<()> {
         let mut stdout = io::stdout().into_raw_mode()?;
 
-        'Outer: for output in game {
+        'Outer: for output in self.game {
             write!(stdout, "{}{}", clear::All, cursor::Hide)?;
 
             for (y, line) in output.lines().enumerate() {
-                write!(stdout, "{}{}", cursor::Goto(1, y as u16 + 1), line)?;
+                write!(stdout, "{}{}", cursor::Goto(1, 1 + y as u16), line)?;
             }
             stdout.flush()?;
 

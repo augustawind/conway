@@ -4,7 +4,7 @@ extern crate conway;
 use std::path::Path;
 
 use clap::{App as CLI, Arg};
-use conway::{App, Cell, Game, Grid};
+use conway::App;
 
 static SAMPLE_DIR: &str = "./sample_patterns";
 static SAMPLE_CHOICES: &[&str] = &["beacon", "glider", "oscillator", "toad"];
@@ -29,17 +29,15 @@ fn main() {
         )
         .get_matches();
 
-    let app = App::new();
-
-    if let Some(file) = matches.value_of("file") {
+    let app = if let Some(file) = matches.value_of("file") {
         let path = Path::new(file);
-        app.run_from_path(path).unwrap()
+        App::from_path(path).unwrap()
     } else if let Some(sample) = matches.value_of("sample") {
         let path = Path::new(SAMPLE_DIR).join(sample);
-        app.run_from_path(path).unwrap();
-    }
+        App::from_path(path).unwrap()
+    } else {
+        panic!("no pattern provided!");
+    };
 
-    let grid = Grid::new(vec![Cell(1, 0), Cell(1, 1), Cell(1, 2)], 10, 10);
-    let game = Game::new(grid);
-    println!("{:#?}", game);
+    app.run().unwrap();
 }
