@@ -47,12 +47,12 @@ impl Grid {
 
     pub fn calculate_bounds(&self) -> ((i64, i64), (i64, i64)) {
         let ((x0, y0), (x1, y1)) = self.calculate_bounds_raw();
-        let (min_x, min_y) = (self.min_width as i64 - 1, self.min_height as i64 - 1);
-        let (dx, dy) = (cmp::min(-x0, 0), cmp::min(-y0, 0));
-        (
-            (cmp::min(x0, 0), cmp::min(y0, 0)),
-            (cmp::max(x1 + dx, min_x), cmp::max(y1 + dy, min_y)),
-        )
+        let (width, height) = (x1 - x0, y1 - y0);
+        let (dx, dy) = (
+            cmp::max(0, self.min_width as i64 - width),
+            cmp::max(0, self.min_height as i64 - height),
+        );
+        ((x0, y0), (x1 + dx, y1 + dy))
     }
 
     fn calculate_bounds_raw(&self) -> ((i64, i64), (i64, i64)) {
@@ -214,18 +214,36 @@ mod test {
     }
 
     #[test]
-    fn test_calculate_bounds() {
+    fn test_calculate_bounds_raw() {
         assert_eq!(
             Grid::new(
                 vec![Cell(2, 1), Cell(-3, 0), Cell(-2, 1), Cell(-2, 0)],
                 0,
                 0
-            ).calculate_bounds(),
+            ).calculate_bounds_raw(),
             ((-3, 0), (2, 1))
         );
         assert_eq!(
-            Grid::new(vec![Cell(53, 4), Cell(2, 1), Cell(-12, 33)], 0, 0).calculate_bounds(),
-            ((-12, 0), (53, 32))
+            Grid::new(vec![Cell(53, 4), Cell(2, 1), Cell(-12, 33)], 0, 0).calculate_bounds_raw(),
+            ((-12, 1), (53, 33))
+        );
+    }
+
+    #[test]
+    fn test_calculate_bounds() {
+        assert_eq!(
+            Grid::new(
+                vec![Cell(2, 1), Cell(-3, 0), Cell(-2, 1), Cell(-2, 0)],
+                6,
+                6
+            ).calculate_bounds(),
+            ((-3, 0), (3, 6)),
+            "should raise the upper bounds to min_width and min_height, if smaller"
+        );
+        assert_eq!(
+            Grid::new(vec![Cell(53, 4), Cell(2, 1), Cell(-12, 33)], 88, 32).calculate_bounds(),
+            ((-12, 1), (76, 33)),
+            "should not raise the upper bounds if they are larger than min_width and min_height"
         );
     }
 
