@@ -29,11 +29,20 @@ pub struct Grid {
 
 impl Grid {
     pub fn new(cells: Vec<Cell>, min_width: u64, min_height: u64) -> Grid {
-        Grid {
+        let mut grid = Grid {
             cells: cells.into_iter().collect(),
             min_width,
             min_height,
-        }
+        };
+        let (width, height) = grid.natural_size();
+        grid.min_width = cmp::max(min_width, width);
+        grid.min_height = cmp::max(min_height, height);
+        grid
+    }
+
+    fn natural_size(&self) -> (u64, u64) {
+        let ((x0, y0), (x1, y1)) = self.calculate_bounds_raw();
+        ((x1 - x0 + 1) as u64, (y1 - y0 + 1) as u64)
     }
 
     pub fn calculate_bounds(&self) -> ((i64, i64), (i64, i64)) {
@@ -151,13 +160,13 @@ impl FromStr for Grid {
             return Err(AppError("string cannot be empty".to_string()));
         }
 
-        let lines: Vec<&str> = s.trim().lines().collect();
-        let height = lines.len();
-        let mut width = lines[0].len();
-
         let mut cells = Vec::new();
-        for (y, line) in lines.iter().enumerate() {
-            width = cmp::max(width, line.len());
+        let mut width = 0;
+        let mut height = 0;
+
+        for (y, line) in s.trim().lines().enumerate() {
+            height += 1;
+            width = cmp::max(width, line.len() as u64);
             for (x, ch) in line.chars().enumerate() {
                 match ch {
                     CHAR_ALIVE => cells.push(Cell(x as i64, y as i64)),
@@ -167,7 +176,7 @@ impl FromStr for Grid {
             }
         }
 
-        Ok(Grid::new(cells, width as u64, height as u64))
+        Ok(Grid::new(cells, width, height))
     }
 }
 
@@ -257,7 +266,7 @@ mod test {
         );
         assert_eq!(
             Grid::new(vec![Cell(53, 4), Cell(2, 1), Cell(-12, 33)], 88, 32).calculate_bounds(),
-            ((-23, 1), (65, 33)),
+            ((-23, 1), (65, 34)),
             "should not raise the bounds if they are larger than min_width and min_height"
         );
         assert_eq!(
