@@ -51,8 +51,8 @@ impl Grid {
         let ((x0, y0), (x1, y1)) = self.calculate_bounds_raw();
         let (width, height) = (x1 - x0, y1 - y0);
         let (dx, dy) = (
-            cmp::max(0, self.min_width as i64 - width),
-            cmp::max(0, self.min_height as i64 - height),
+            cmp::max(0, self.min_width as i64 - width - 1),
+            cmp::max(0, self.min_height as i64 - height - 1),
         );
         let (dx0, dx1) = halve_int(dx);
         let (dy0, dy1) = halve_int(dy);
