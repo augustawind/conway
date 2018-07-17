@@ -40,25 +40,25 @@ impl Grid {
         grid
     }
 
-    fn natural_size(&self) -> (u64, u64) {
-        let ((x0, y0), (x1, y1)) = self.calculate_bounds_raw();
-        ((x1 - x0 + 1) as u64, (y1 - y0 + 1) as u64)
-    }
-
-    pub fn calculate_bounds(&self) -> ((i64, i64), (i64, i64)) {
+    pub fn viewport(&self) -> ((i64, i64), (i64, i64)) {
         let (width, height) = self.natural_size();
         let (dx, dy) = (
             cmp::max(0, self.min_width - width) as i64,
             cmp::max(0, self.min_height - height) as i64,
         );
 
-        let ((x0, y0), (x1, y1)) = self.calculate_bounds_raw();
+        let ((x0, y0), (x1, y1)) = self.calculate_bounds();
         let ((dx0, dx1), (dy0, dy1)) = (split_int(dx), split_int(dy));
 
         ((x0 - dx0, y0 - dy0), (x1 + dx1, y1 + dy1))
     }
 
-    fn calculate_bounds_raw(&self) -> ((i64, i64), (i64, i64)) {
+    fn natural_size(&self) -> (u64, u64) {
+        let ((x0, y0), (x1, y1)) = self.calculate_bounds();
+        ((x1 - x0 + 1) as u64, (y1 - y0 + 1) as u64)
+    }
+
+    fn calculate_bounds(&self) -> ((i64, i64), (i64, i64)) {
         let mut cells = self.cells.iter();
         if let Some(&Cell(x, y)) = cells.next() {
             let ((mut x0, mut y0), (mut x1, mut y1)) = ((x, y), (x, y));
@@ -100,42 +100,42 @@ impl Grid {
         self.cells.clear()
     }
 
+    pub fn active_cells(&self) -> HashSet<Cell> {
+        self.cells
+            .iter()
+            .flat_map(|cell| {
+                let mut cells = self.adjacent_cells(cell);
+                cells.insert(*cell);
+                cells
+            })
+            .collect()
+    }
+
+    pub fn adjacent_cells(&self, cell: &Cell) -> HashSet<Cell> {
+        let Cell(x, y) = cell;
+        let mut cells = HashSet::with_capacity(8);
+        for dx in -1..=1 {
+            for dy in -1..=1 {
+                if dx == 0 && dy == 0 {
+                    continue;
+                }
+                cells.insert(Cell(x + dx, y + dy));
+            }
+        }
+        cells
+    }
+
     pub fn live_neighbors(&self, cell: &Cell) -> usize {
         self.adjacent_cells(cell)
             .iter()
             .filter(|c| self.is_alive(c))
             .count()
     }
-
-    pub fn adjacent_cells(&self, cell: &Cell) -> Vec<Cell> {
-        let Cell(x, y) = cell;
-        let mut adj_cells = Vec::new();
-        for dx in -1..=1 {
-            for dy in -1..=1 {
-                if dx == 0 && dy == 0 {
-                    continue;
-                }
-                adj_cells.push(Cell(x + dx, y + dy));
-            }
-        }
-        adj_cells
-    }
-
-    pub fn all_cells(&self) -> Vec<Cell> {
-        let ((x0, y0), (x1, y1)) = self.calculate_bounds();
-        let mut result = Vec::new();
-        for y in y0..=y1 {
-            for x in x0..=x1 {
-                result.push(Cell(x, y));
-            }
-        }
-        result
-    }
 }
 
 impl fmt::Display for Grid {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let ((x0, y0), (x1, y1)) = self.calculate_bounds();
+        let ((x0, y0), (x1, y1)) = self.viewport();
 
         let mut output = String::new();
         for y in y0..=y1 {
@@ -220,6 +220,68 @@ mod test {
     }
 
     #[test]
+    fn test_viewport() {
+        assert_eq!(
+            Grid::new(
+                vec![Cell(2, 1), Cell(-3, 0), Cell(-2, 1), Cell(-2, 0)],
+                7,
+                7
+            ).viewport(),
+            ((-3, -2), (3, 4)),
+            "should raise the bounds to match min_width and min_height, if smaller"
+        );
+        assert_eq!(
+            Grid::new(vec![Cell(53, 4), Cell(2, 1), Cell(-12, 33)], 88, 32).viewport(),
+            ((-23, 1), (64, 33)),
+            "should not raise the bounds if they are larger than min_width and min_height"
+        );
+        assert_eq!(
+            Grid::new(vec![Cell(2, 3), Cell(3, 3), Cell(5, 4), Cell(4, 2)], 10, 10).viewport(),
+            ((-1, -1), (8, 8)),
+        );
+    }
+
+    #[test]
+    fn test_calculate_bounds() {
+        assert_eq!(
+            Grid::new(
+                vec![Cell(2, 1), Cell(-3, 0), Cell(-2, 1), Cell(-2, 0)],
+                0,
+                0
+            ).calculate_bounds(),
+            ((-3, 0), (2, 1))
+        );
+        assert_eq!(
+            Grid::new(vec![Cell(53, 4), Cell(2, 1), Cell(-12, 33)], 0, 0).calculate_bounds(),
+            ((-12, 1), (53, 33))
+        );
+    }
+
+    #[test]
+    fn test_active_cells() {
+        let grid = Grid::new(vec![Cell(0, 0), Cell(1, 1)], 0, 0);
+        assert_eq!(
+            grid.active_cells(),
+            hashset![
+                Cell(0, 0),
+                Cell(-1, -1),
+                Cell(0, -1),
+                Cell(1, -1),
+                Cell(1, 0),
+                Cell(1, 1),
+                Cell(0, 1),
+                Cell(-1, 1),
+                Cell(-1, 0),
+                Cell(2, 0),
+                Cell(2, 1),
+                Cell(2, 2),
+                Cell(1, 2),
+                Cell(0, 2),
+            ]
+        )
+    }
+
+    #[test]
     fn test_live_neighbors() {
         let grid = Grid::new(
             vec![Cell(-1, -1), Cell(-1, -2), Cell(0, 0), Cell(1, 0)],
@@ -236,45 +298,6 @@ mod test {
             1,
             "it should work for a dead cell"
         )
-    }
-
-    #[test]
-    fn test_calculate_bounds_raw() {
-        assert_eq!(
-            Grid::new(
-                vec![Cell(2, 1), Cell(-3, 0), Cell(-2, 1), Cell(-2, 0)],
-                0,
-                0
-            ).calculate_bounds_raw(),
-            ((-3, 0), (2, 1))
-        );
-        assert_eq!(
-            Grid::new(vec![Cell(53, 4), Cell(2, 1), Cell(-12, 33)], 0, 0).calculate_bounds_raw(),
-            ((-12, 1), (53, 33))
-        );
-    }
-
-    #[test]
-    fn test_calculate_bounds() {
-        assert_eq!(
-            Grid::new(
-                vec![Cell(2, 1), Cell(-3, 0), Cell(-2, 1), Cell(-2, 0)],
-                7,
-                7
-            ).calculate_bounds(),
-            ((-3, -2), (3, 4)),
-            "should raise the bounds to match min_width and min_height, if smaller"
-        );
-        assert_eq!(
-            Grid::new(vec![Cell(53, 4), Cell(2, 1), Cell(-12, 33)], 88, 32).calculate_bounds(),
-            ((-23, 1), (64, 33)),
-            "should not raise the bounds if they are larger than min_width and min_height"
-        );
-        assert_eq!(
-            Grid::new(vec![Cell(2, 3), Cell(3, 3), Cell(5, 4), Cell(4, 2)], 10, 10)
-                .calculate_bounds(),
-            ((-1, -1), (8, 8)),
-        );
     }
 
     #[test]

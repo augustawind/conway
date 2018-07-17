@@ -24,7 +24,7 @@ impl Game {
     }
 
     pub fn tick(&mut self) {
-        for cell in self.grid.all_cells() {
+        for cell in self.grid.active_cells() {
             if self.survives(&cell) {
                 self.swap.set_alive(cell);
             }
