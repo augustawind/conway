@@ -51,8 +51,8 @@ impl Grid {
         let ((x0, y0), (x1, y1)) = self.calculate_bounds_raw();
         let (width, height) = (x1 - x0, y1 - y0);
         let (dx, dy) = (
-            cmp::max(0, self.min_width as i64 - width - 1),
-            cmp::max(0, self.min_height as i64 - height - 1),
+            cmp::max(0, self.min_width as i64 - width),
+            cmp::max(0, self.min_height as i64 - height),
         );
         let (dx0, dx1) = halve_int(dx);
         let (dy0, dy1) = halve_int(dy);
@@ -123,8 +123,8 @@ impl fmt::Display for Grid {
         let ((x0, y0), (x1, y1)) = self.calculate_bounds();
 
         let mut output = String::new();
-        for y in y0..=y1 {
-            for x in x0..=x1 {
+        for y in y0..y1 {
+            for x in x0..x1 {
                 output.push(if self.is_alive(&Cell(x, y)) {
                     CHAR_ALIVE
                 } else {
