@@ -36,17 +36,6 @@ impl Grid {
         }
     }
 
-    pub fn all_cells(&self) -> Vec<Cell> {
-        let ((x0, y0), (x1, y1)) = self.calculate_bounds();
-        let mut result = Vec::new();
-        for y in y0..=y1 {
-            for x in x0..=x1 {
-                result.push(Cell(x, y));
-            }
-        }
-        result
-    }
-
     pub fn calculate_bounds(&self) -> ((i64, i64), (i64, i64)) {
         let ((x0, y0), (x1, y1)) = self.calculate_bounds_raw();
         let (width, height) = (x1 - x0, y1 - y0);
@@ -115,6 +104,17 @@ impl Grid {
             }
         }
         neighbors
+    }
+
+    pub fn all_cells(&self) -> Vec<Cell> {
+        let ((x0, y0), (x1, y1)) = self.calculate_bounds();
+        let mut result = Vec::new();
+        for y in y0..=y1 {
+            for x in x0..=x1 {
+                result.push(Cell(x, y));
+            }
+        }
+        result
     }
 }
 
