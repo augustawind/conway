@@ -9,6 +9,7 @@ use conway::{App, Config};
 
 static SAMPLE_DIR: &str = "./sample_patterns";
 static SAMPLE_CHOICES: &[&str] = &["beacon", "glider", "oscillator", "toad"];
+static VIEW_CHOICES: &[&str] = &["moving", "fixed"];
 
 fn main() {
     let matches = clap::App::new("Conway's Game of Life")
@@ -39,12 +40,20 @@ fn main() {
                 .default_value("500")
                 .help("delay (ms) between ticks"),
         )
+        .arg(
+            Arg::with_name("view")
+                .long("view")
+                .default_value("moving")
+                .possible_values(VIEW_CHOICES)
+                .help("viewing mode"),
+        )
         .get_matches();
 
     let mut config = Config::default();
     if let Ok(ms) = matches.value_of("delay").unwrap().parse() {
         config.stream_delay = Duration::from_millis(ms);
     }
+    let view = matches.value_of("view").unwrap();
 
     let mut app = if let Some(file) = matches.value_of("file") {
         let path = Path::new(file);

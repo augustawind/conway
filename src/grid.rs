@@ -46,14 +46,15 @@ impl Grid {
     }
 
     pub fn calculate_bounds(&self) -> ((i64, i64), (i64, i64)) {
-        let ((x0, y0), (x1, y1)) = self.calculate_bounds_raw();
-        let (width, height) = (x1 - x0, y1 - y0);
+        let (width, height) = self.natural_size();
         let (dx, dy) = (
-            cmp::max(0, self.min_width as i64 - width),
-            cmp::max(0, self.min_height as i64 - height),
+            cmp::max(0, self.min_width - width) as i64,
+            cmp::max(0, self.min_height - height) as i64,
         );
-        let (dx0, dx1) = halve_int(dx);
-        let (dy0, dy1) = halve_int(dy);
+
+        let ((x0, y0), (x1, y1)) = self.calculate_bounds_raw();
+        let ((dx0, dx1), (dy0, dy1)) = (split_int(dx), split_int(dy));
+
         ((x0 - dx0, y0 - dy0), (x1 + dx1, y1 + dy1))
     }
 
@@ -137,8 +138,8 @@ impl fmt::Display for Grid {
         let ((x0, y0), (x1, y1)) = self.calculate_bounds();
 
         let mut output = String::new();
-        for y in y0..y1 {
-            for x in x0..x1 {
+        for y in y0..=y1 {
+            for x in x0..=x1 {
                 output.push(if self.is_alive(&Cell(x, y)) {
                     CHAR_ALIVE
                 } else {
@@ -180,7 +181,7 @@ impl FromStr for Grid {
     }
 }
 
-fn halve_int<T: Integer + Copy>(n: T) -> (T, T) {
+fn split_int<T: Integer + Copy>(n: T) -> (T, T) {
     let two = T::one() + T::one();
     let (quotient, remainder) = n.div_rem(&two);
     (quotient, quotient + remainder)
@@ -258,21 +259,21 @@ mod test {
         assert_eq!(
             Grid::new(
                 vec![Cell(2, 1), Cell(-3, 0), Cell(-2, 1), Cell(-2, 0)],
-                6,
-                6
+                7,
+                7
             ).calculate_bounds(),
             ((-3, -2), (3, 4)),
             "should raise the bounds to match min_width and min_height, if smaller"
         );
         assert_eq!(
             Grid::new(vec![Cell(53, 4), Cell(2, 1), Cell(-12, 33)], 88, 32).calculate_bounds(),
-            ((-23, 1), (65, 34)),
+            ((-23, 1), (64, 33)),
             "should not raise the bounds if they are larger than min_width and min_height"
         );
         assert_eq!(
             Grid::new(vec![Cell(2, 3), Cell(3, 3), Cell(5, 4), Cell(4, 2)], 10, 10)
                 .calculate_bounds(),
-            ((-1, -2), (9, 8)),
+            ((-1, -1), (8, 8)),
         );
     }
 
@@ -295,12 +296,12 @@ mod test {
     }
 
     #[test]
-    fn test_halve_int() {
-        assert_eq!(halve_int(30), (15, 15));
-        assert_eq!(halve_int(31), (15, 16));
-        assert_eq!(halve_int(32), (16, 16));
-        assert_eq!(halve_int(0), (0, 0));
-        assert_eq!(halve_int(1), (0, 1));
-        assert_eq!(halve_int(2), (1, 1));
+    fn test_split_int() {
+        assert_eq!(split_int(30), (15, 15));
+        assert_eq!(split_int(31), (15, 16));
+        assert_eq!(split_int(32), (16, 16));
+        assert_eq!(split_int(0), (0, 0));
+        assert_eq!(split_int(1), (0, 1));
+        assert_eq!(split_int(2), (1, 1));
     }
 }
