@@ -3,6 +3,8 @@ use std::collections::HashSet;
 use std::fmt;
 use std::str::FromStr;
 
+use num_integer::Integer;
+
 use super::error::AppError;
 
 const CHAR_ALIVE: char = 'x';
@@ -52,7 +54,9 @@ impl Grid {
             cmp::max(0, self.min_width as i64 - width),
             cmp::max(0, self.min_height as i64 - height),
         );
-        ((x0, y0), (x1 + dx, y1 + dy))
+        let (dx0, dx1) = halve_int(dx);
+        let (dy0, dy1) = halve_int(dy);
+        ((x0 - dx0, y0 - dy0), (x1 + dx1, y1 + dy1))
     }
 
     fn calculate_bounds_raw(&self) -> ((i64, i64), (i64, i64)) {
@@ -162,6 +166,12 @@ impl FromStr for Grid {
     }
 }
 
+fn halve_int<T: Integer + Copy>(n: T) -> (T, T) {
+    let two = T::one() + T::one();
+    let (quotient, remainder) = n.div_rem(&two);
+    (quotient, quotient + remainder)
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -237,18 +247,18 @@ mod test {
                 6,
                 6
             ).calculate_bounds(),
-            ((-3, 0), (3, 6)),
-            "should raise the upper bounds to min_width and min_height, if smaller"
+            ((-3, -2), (3, 4)),
+            "should raise the bounds to match min_width and min_height, if smaller"
         );
         assert_eq!(
             Grid::new(vec![Cell(53, 4), Cell(2, 1), Cell(-12, 33)], 88, 32).calculate_bounds(),
-            ((-12, 1), (76, 33)),
-            "should not raise the upper bounds if they are larger than min_width and min_height"
+            ((-23, 1), (65, 33)),
+            "should not raise the bounds if they are larger than min_width and min_height"
         );
         assert_eq!(
             Grid::new(vec![Cell(2, 3), Cell(3, 3), Cell(5, 4), Cell(4, 2)], 10, 10)
                 .calculate_bounds(),
-            ((2, 2), (12, 12)),
+            ((-1, -2), (9, 8)),
         );
     }
 
@@ -268,5 +278,15 @@ mod test {
 
         assert!(Grid::from_str("").is_err());
         assert!(Grid::from_str("abc\ndef").is_err())
+    }
+
+    #[test]
+    fn test_halve_int() {
+        assert_eq!(halve_int(30), (15, 15));
+        assert_eq!(halve_int(31), (15, 16));
+        assert_eq!(halve_int(32), (16, 16));
+        assert_eq!(halve_int(0), (0, 0));
+        assert_eq!(halve_int(1), (0, 1));
+        assert_eq!(halve_int(2), (1, 1));
     }
 }

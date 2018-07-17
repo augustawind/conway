@@ -1,6 +1,7 @@
 #[macro_use]
 #[cfg(test)]
 extern crate maplit;
+extern crate num_integer;
 extern crate termion;
 
 pub mod app;
