@@ -10,7 +10,8 @@ pub struct Game {
 
 impl Game {
     pub fn new(grid: Grid) -> Game {
-        let swap = Grid::new(Vec::new(), grid.min_width, grid.min_height);
+        let mut swap = grid.clone();
+        swap.clear();
         Game { grid, swap }
     }
 

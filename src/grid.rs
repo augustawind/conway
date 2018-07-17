@@ -23,8 +23,8 @@ impl fmt::Display for Cell {
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub struct Grid {
     cells: HashSet<Cell>,
-    pub min_width: u64,
-    pub min_height: u64,
+    min_width: u64,
+    min_height: u64,
 }
 
 impl Grid {
@@ -90,19 +90,25 @@ impl Grid {
         self.cells.clear()
     }
 
-    pub fn live_neighbors(&self, cell: &Cell) -> u8 {
+    pub fn live_neighbors(&self, cell: &Cell) -> usize {
+        self.adjacent_cells(cell)
+            .iter()
+            .filter(|c| self.is_alive(c))
+            .count()
+    }
+
+    pub fn adjacent_cells(&self, cell: &Cell) -> Vec<Cell> {
         let Cell(x, y) = cell;
-        let mut count = 0;
-        let mut neighbor: Cell;
+        let mut adj_cells = Vec::new();
         for dx in -1..=1 {
             for dy in -1..=1 {
-                neighbor = Cell(x + dx, y + dy);
-                if &neighbor != cell && self.is_alive(&neighbor) {
-                    count += 1;
+                if dx == 0 && dy == 0 {
+                    continue;
                 }
+                adj_cells.push(Cell(x + dx, y + dy));
             }
         }
-        count
+        adj_cells
     }
 
     pub fn all_cells(&self) -> Vec<Cell> {
