@@ -33,14 +33,14 @@ impl Game {
     }
 
     pub fn survives(&self, cell: &Cell) -> bool {
-        let neighbors = self.grid.live_neighbors(cell);
+        let live_neighbors = self.grid.live_neighbors(cell);
         if self.grid.is_alive(cell) {
-            match neighbors.len() {
+            match live_neighbors {
                 2 | 3 => true,
                 _ => false,
             }
         } else {
-            match neighbors.len() {
+            match live_neighbors {
                 3 => true,
                 _ => false,
             }

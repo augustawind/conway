@@ -90,20 +90,19 @@ impl Grid {
         self.cells.clear()
     }
 
-    // TODO: can this simply return a count?
-    pub fn live_neighbors(&self, cell: &Cell) -> HashSet<Cell> {
+    pub fn live_neighbors(&self, cell: &Cell) -> u8 {
         let Cell(x, y) = cell;
-        let mut neighbors = HashSet::new();
+        let mut count = 0;
         let mut neighbor: Cell;
         for dx in -1..=1 {
             for dy in -1..=1 {
                 neighbor = Cell(x + dx, y + dy);
                 if &neighbor != cell && self.is_alive(&neighbor) {
-                    neighbors.insert(neighbor);
+                    count += 1;
                 }
             }
         }
-        neighbors
+        count
     }
 
     pub fn all_cells(&self) -> Vec<Cell> {
@@ -213,12 +212,12 @@ mod test {
         );
         assert_eq!(
             grid.live_neighbors(&Cell(0, 0)),
-            hashset![Cell(-1, -1), Cell(1, 0)],
+            2,
             "it should work for a live cell"
         );
         assert_eq!(
             grid.live_neighbors(&Cell(-1, -3)),
-            hashset![Cell(-1, -2)],
+            1,
             "it should work for a dead cell"
         )
     }
