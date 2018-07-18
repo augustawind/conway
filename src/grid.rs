@@ -6,7 +6,7 @@ use std::str::FromStr;
 use num_integer::Integer;
 
 use config::Config;
-use {AppError, ErrorKind};
+use AppError;
 
 /// A Cell is a point on the `Grid`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -34,10 +34,7 @@ impl FromStr for View {
             "centered" => Ok(View::Centered),
             "fixed" => Ok(View::Fixed),
             "follow" => Ok(View::Follow),
-            s => Err(AppError::new(
-                ErrorKind::ParseError,
-                format!("'{}' is not a valid choice", s),
-            )),
+            s => Err(From::from(format!("'{}' is not a valid choice", s))),
         }
     }
 }
@@ -244,10 +241,7 @@ impl FromStr for Grid {
                 if ch == config.char_alive {
                     cells.push(Cell(x as i64, y as i64));
                 } else if ch != config.char_dead {
-                    return Err(AppError::new(
-                        ErrorKind::ParseError,
-                        format!("unknown character: '{}'", ch).as_str(),
-                    ));
+                    return Err(From::from(format!("unknown character: '{}'", ch)));
                 }
             }
         }

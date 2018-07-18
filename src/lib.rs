@@ -20,72 +20,48 @@ pub use game::Game;
 pub type AppResult<T> = Result<T, AppError>;
 
 #[derive(Debug)]
-pub enum ErrorKind {
-    IOError,
-    ParseError,
-}
-
-impl ErrorKind {
-    fn as_str(&self) -> &'static str {
-        match self {
-            ErrorKind::IOError => "IO error",
-            ErrorKind::ParseError => "invalid input",
-        }
-    }
-}
-
-#[derive(Debug)]
-pub struct AppError {
-    kind: ErrorKind,
-    description: String,
-    cause: Option<Box<Error>>,
+pub enum AppError {
+    IO(io::Error),
+    ParseInt(num::ParseIntError),
+    Data(Box<Error>),
 }
 
 impl AppError {
-    pub fn new<E>(kind: ErrorKind, err: E) -> AppError
+    pub fn from_err<E>(err: E) -> AppError
     where
-        E: fmt::Display,
+        E: Error + 'static,
     {
-        AppError {
-            kind: kind,
-            description: err.to_string(),
-            cause: None,
-        }
+        AppError::Data(Box::new(err))
     }
 }
 
 impl fmt::Display for AppError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "conway: {}: {}", self.kind.as_str(), self.description)
+        let (prefix, msg) = match self {
+            AppError::IO(e) => ("IO failed", e.to_string()),
+            AppError::ParseInt(e) => ("number is not a valid integer", e.to_string()),
+            AppError::Data(e) => ("invalid input", e.to_string()),
+        };
+        write!(f, "conway: {}: {}", prefix, msg)
     }
 }
 
-impl Error for AppError {
-    fn description(&self) -> &str {
-        self.description.as_str()
-    }
+impl Error for AppError {}
 
-    fn cause(&self) -> Option<&Error> {
-        self.cause.as_ref().map(|c| &**c)
+impl From<String> for AppError {
+    fn from(error: String) -> Self {
+        AppError::Data(From::from(error))
     }
 }
 
 impl From<io::Error> for AppError {
     fn from(error: io::Error) -> Self {
-        AppError {
-            kind: ErrorKind::IOError,
-            description: error.to_string(),
-            cause: Some(Box::new(error)),
-        }
+        AppError::IO(error)
     }
 }
 
 impl From<num::ParseIntError> for AppError {
     fn from(error: num::ParseIntError) -> Self {
-        AppError {
-            kind: ErrorKind::ParseError,
-            description: error.to_string(),
-            cause: Some(Box::new(error)),
-        }
+        AppError::ParseInt(error)
     }
 }
