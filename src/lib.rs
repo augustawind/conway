@@ -42,13 +42,13 @@ pub struct AppError {
 }
 
 impl AppError {
-    pub fn new<E>(kind: ErrorKind, error: E) -> AppError
+    pub fn new<E>(kind: ErrorKind, err: E) -> AppError
     where
         E: fmt::Display,
     {
         AppError {
             kind: kind,
-            description: error.to_string(),
+            description: err.to_string(),
             cause: None,
         }
     }
