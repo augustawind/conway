@@ -8,7 +8,7 @@ use std::time::Duration;
 use clap;
 use clap::{Arg, ArgMatches};
 
-use super::{App, AppResult, Game, Grid};
+use super::AppResult;
 
 static SAMPLE_DIR: &str = "./sample_patterns";
 
