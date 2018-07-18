@@ -7,7 +7,7 @@ use std::time::Duration;
 
 use clap::{App, Arg, ArgGroup, ArgMatches};
 
-use {AppError, AppResult};
+use AppResult;
 
 static SAMPLE_DIR: &str = "./sample_patterns";
 
@@ -54,13 +54,7 @@ where
             Arg::with_name("delay")
                 .long("delay")
                 .default_value("500")
-                .help("delay (ms) between ticks")
-                .validator(|s| {
-                    if s.is_empty() || !s.chars().all(|c| c.is_ascii_digit()) {
-                        return Err("must be a valid number of milliseconds".to_string());
-                    }
-                    Ok(())
-                }),
+                .help("delay (ms) between ticks"),
         )
         .arg(
             Arg::with_name("view")
@@ -139,27 +133,10 @@ impl Config {
             .next()
             .unwrap();
 
-        let e = AppError::new("must be a valid integer");
-        config.min_width = matches
-            .value_of("min-width")
-            .unwrap()
-            .parse()
-            .map_err(|_| e.clone())?;
-        config.min_height = matches
-            .value_of("min-width")
-            .unwrap()
-            .parse()
-            .map_err(|_| e.clone())?;
-        config.max_width = matches
-            .value_of("max-width")
-            .unwrap()
-            .parse()
-            .map_err(|_| e.clone())?;
-        config.max_height = matches
-            .value_of("max-width")
-            .unwrap()
-            .parse()
-            .map_err(|_| e.clone())?;
+        config.min_width = matches.value_of("min-width").unwrap().parse()?;
+        config.min_height = matches.value_of("min-width").unwrap().parse()?;
+        config.max_width = matches.value_of("max-width").unwrap().parse()?;
+        config.max_height = matches.value_of("max-width").unwrap().parse()?;
 
         config.pattern = {
             let path = if let Some(file) = matches.value_of("file") {

@@ -5,7 +5,7 @@ use std::str::FromStr;
 
 use num_integer::Integer;
 
-use AppError;
+use {AppError, ErrorKind};
 
 const CHAR_ALIVE: char = 'x';
 const CHAR_DEAD: char = '.';
@@ -35,7 +35,10 @@ impl FromStr for View {
             "centered" => Ok(View::Centered),
             "fixed" => Ok(View::Fixed),
             "follow" => Ok(View::Follow),
-            s => Err(AppError(format!("could not parse '{}' into a View", s))),
+            s => Err(AppError::new(
+                ErrorKind::ParseError,
+                format!("'{}' is not a valid choice", s),
+            )),
         }
     }
 }
@@ -238,10 +241,6 @@ impl FromStr for Grid {
     type Err = AppError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if s.is_empty() {
-            return Err(AppError("string cannot be empty".to_string()));
-        }
-
         let mut cells = Vec::new();
         let mut width = 0;
         let mut height = 0;
@@ -253,7 +252,12 @@ impl FromStr for Grid {
                 match ch {
                     CHAR_ALIVE => cells.push(Cell(x as i64, y as i64)),
                     CHAR_DEAD => (),
-                    _ => return Err(AppError(format!("unknown character: '{}'", ch))),
+                    _ => {
+                        return Err(AppError::new(
+                            ErrorKind::ParseError,
+                            format!("unknown character: '{}'", ch).as_str(),
+                        ))
+                    }
                 }
             }
         }
@@ -455,7 +459,6 @@ mod test {
             ),
         );
 
-        assert!(Grid::from_str("").is_err());
         assert!(Grid::from_str("abc\ndef").is_err())
     }
 
