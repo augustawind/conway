@@ -1,9 +1,7 @@
 use std::cmp;
 use std::fmt;
-use std::fs::File;
 use std::io;
 use std::io::prelude::*;
-use std::path::Path;
 use std::thread;
 
 use termion::event::Key;
@@ -11,7 +9,7 @@ use termion::input::TermRead;
 use termion::raw::{IntoRawMode, RawTerminal};
 use termion::{clear, cursor, style};
 
-use super::{AppResult, Config, Game, Grid};
+use super::{AppResult, Config, Game};
 
 /// A Rect is a tuple containing the (x-origin, y-origin, width, height) of a
 /// rectangle.
