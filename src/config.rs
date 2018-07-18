@@ -110,9 +110,7 @@ impl Config {
         let matches = parse_args(env::args_os());
         let mut config = Config::default();
 
-        if let Ok(ms) = matches.value_of("delay").unwrap().parse() {
-            config.stream_delay = Duration::from_millis(ms);
-        }
+        config.stream_delay = Duration::from_millis(matches.value_of("delay").unwrap().parse()?);
 
         config.raw = matches.is_present("raw");
 
