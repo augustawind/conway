@@ -4,6 +4,7 @@ use std::ffi::OsString;
 use std::fs::File;
 use std::io::prelude::*;
 use std::path::Path;
+use std::str::FromStr;
 use std::time::Duration;
 
 use clap::{App, Arg, ArgGroup, ArgMatches};
@@ -24,13 +25,6 @@ where
     I: IntoIterator<Item = T>,
     T: Into<OsString> + Clone,
 {
-    fn validate_single_char(s: String) -> Result<(), String> {
-        if s.len() != 1 {
-            return Err("must be a single character".to_string());
-        }
-        Ok(())
-    }
-
     App::new("Conway's Game of Life")
         .arg(
             Arg::with_name("file")
@@ -71,14 +65,10 @@ where
         .args(&[
             Arg::with_name("live-char")
                 .long("live-char")
-                .default_value("x")
-                .help("char to represent living cells")
-                .validator(validate_single_char),
+                .help("char to represent living cells"),
             Arg::with_name("dead-char")
                 .long("dead-char")
-                .default_value(".")
-                .help("char to represent dead cells")
-                .validator(validate_single_char),
+                .help("char to represent dead cells"),
         ])
         .args(&[
             Arg::with_name("min-width")
@@ -130,16 +120,10 @@ impl Config {
 
         config.char_alive = matches
             .value_of("live-char")
-            .unwrap()
-            .chars()
-            .next()
-            .unwrap();
+            .map_or(Ok(CHAR_ALIVE), FromStr::from_str)?;
         config.char_dead = matches
             .value_of("dead-char")
-            .unwrap()
-            .chars()
-            .next()
-            .unwrap();
+            .map_or(Ok(CHAR_DEAD), FromStr::from_str)?;
 
         config.min_width = matches.value_of("min-width").unwrap().parse()?;
         config.min_height = matches.value_of("min-width").unwrap().parse()?;
