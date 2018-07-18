@@ -1,6 +1,7 @@
 use std::mem;
 
-use super::{Cell, Grid, Rect};
+use super::ui::Rect;
+use super::{Cell, Grid};
 
 /// Game holds the high-level gameplay logic.
 #[derive(Debug)]
