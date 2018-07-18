@@ -228,7 +228,6 @@ impl fmt::Display for Grid {
             }
             output.push('\n');
         }
-        output.push_str(&format!("\n{}", coords.as_slice().join(" ")));
 
         write!(f, "{}", output)
     }

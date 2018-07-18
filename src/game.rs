@@ -1,19 +1,45 @@
+use std::default::Default;
 use std::mem;
+use std::thread;
 
 use super::ui::Rect;
-use super::{Cell, Grid};
+use super::{AppResult, Cell, Config, Grid};
+
+pub struct GameIter<'a>(&'a mut Game);
+
+impl<'a> Iterator for GameIter<'a> {
+    type Item = String;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.0.is_over() {
+            return None;
+        }
+        self.0.tick();
+        thread::sleep(self.0.opts.stream_delay);
+        Some(self.0.grid.to_string())
+    }
+}
 
 /// Game holds the high-level gameplay logic.
 #[derive(Debug)]
 pub struct Game {
     pub grid: Grid,
     swap: Grid,
+    opts: Config,
     pub rect: Rect,
 }
 
 impl Game {
+    pub fn load() -> AppResult<Game> {
+        let opts = Config::load()?;
+        let mut grid: Grid = opts.pattern.parse()?;
+        grid.char_alive = opts.char_alive;
+        grid.char_dead = opts.char_dead;
+        Ok(Game::new(grid, opts))
+    }
+
     /// Create a new Game from a Grid.
-    pub fn new(grid: Grid) -> Game {
+    pub fn new(grid: Grid, opts: Config) -> Game {
         let rect = {
             let (w, h) = grid.min_size();
             Rect::new(0, 0, w as u16, h as u16)
@@ -22,7 +48,16 @@ impl Game {
         let mut swap = grid.clone();
         swap.clear();
 
-        Game { grid, swap, rect }
+        Game {
+            grid,
+            swap,
+            opts,
+            rect,
+        }
+    }
+
+    pub fn iter(&mut self) -> GameIter {
+        GameIter(self)
     }
 
     /// Return whether the Game is over. This happens with the Grid is empty.
@@ -66,15 +101,18 @@ mod test {
 
     #[test]
     fn test_survives_blinker() {
-        let game = Game::new(Grid::new(
-            vec![Cell(1, 0), Cell(1, 1), Cell(1, 2)],
-            0,
-            0,
-            0,
-            0,
-            'x',
-            '.',
-        ));
+        let game = Game::new(
+            Grid::new(
+                vec![Cell(1, 0), Cell(1, 1), Cell(1, 2)],
+                0,
+                0,
+                0,
+                0,
+                'x',
+                '.',
+            ),
+            Default::default(),
+        );
         assert!(
             game.survives(&Cell(1, 1)),
             "a live cell with 2 live neighbors should survive"

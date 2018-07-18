@@ -103,7 +103,7 @@ where
         .get_matches_from(args)
 }
 
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub struct Config {
     pub pattern: String,
     pub raw: bool,

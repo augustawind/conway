@@ -1,11 +1,20 @@
 extern crate conway;
 
 use std::io;
+use std::io::prelude::*;
 
-use conway::App;
+use conway::Game;
 
 fn main() {
-    let mut app = App::load().unwrap();
+    let mut game = Game::load().unwrap();
     let mut stdout = io::stdout();
-    app.run(&mut stdout).unwrap();
+    let hr = &{
+        let (.., width, _) = game.rect.shape();
+        "%".repeat(width as usize)
+    };
+    write!(stdout, "\n{}", hr).unwrap();
+    for frame in game.iter() {
+        write!(stdout, "\n{}{}", frame, hr).unwrap();
+        stdout.flush().unwrap();
+    }
 }
