@@ -2,6 +2,7 @@ use std::mem;
 
 use super::grid::{Cell, Grid};
 
+/// Game holds the high-level gameplay logic.
 #[derive(Debug)]
 pub struct Game {
     pub grid: Grid,
@@ -9,20 +10,26 @@ pub struct Game {
 }
 
 impl Game {
+    /// Create a new Game from a Grid.
     pub fn new(grid: Grid) -> Game {
         let mut swap = grid.clone();
         swap.clear();
         Game { grid, swap }
     }
 
+    /// Return whether the Game is over. This happens with the Grid is empty.
     pub fn is_over(&self) -> bool {
         self.grid.is_empty()
     }
 
+    /// Return the Game as a string for output.
     pub fn draw(&self) -> String {
         self.grid.to_string()
     }
 
+    /// Progress the Game of Life forward.
+    ///
+    /// `tick` applies the rules of game to each individual Cell, killing some and reviving others.
     pub fn tick(&mut self) {
         for cell in self.grid.active_cells() {
             if self.survives(&cell) {
@@ -33,6 +40,7 @@ impl Game {
         mem::swap(&mut self.grid, &mut self.swap);
     }
 
+    /// Survives returns whether the given Cell survives an application of the Game Rules.
     pub fn survives(&self, cell: &Cell) -> bool {
         let live_neighbors = self.grid.live_neighbors(cell);
         if self.grid.is_alive(cell) {

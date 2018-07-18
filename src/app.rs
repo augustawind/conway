@@ -5,14 +5,13 @@ use std::io;
 use std::io::prelude::*;
 use std::path::Path;
 use std::thread;
-use std::time::Duration;
 
 use termion::event::Key;
 use termion::input::TermRead;
 use termion::raw::{IntoRawMode, RawTerminal};
 use termion::{clear, cursor, style};
 
-use super::{AppResult, Game, Grid};
+use super::{AppResult, Config, Game, Grid};
 
 /// A Rect is a tuple containing the (x-origin, y-origin, width, height) of a
 /// rectangle.
@@ -94,18 +93,6 @@ impl Menu {
     }
 }
 
-pub struct Config {
-    pub stream_delay: Duration,
-}
-
-impl Default for Config {
-    fn default() -> Config {
-        Config {
-            stream_delay: Duration::from_millis(500),
-        }
-    }
-}
-
 pub struct App {
     game: Game,
     menu: Menu,
@@ -113,29 +100,24 @@ pub struct App {
 }
 
 impl App {
-    pub fn new(game: Game) -> App {
-        App {
-            game: game,
+    pub fn load() -> AppResult<App> {
+        let config = Config::load()?;
+        Ok(App {
+            game: Game::new(config.pattern.parse()?),
             menu: Menu::new(0, 0, 20, 20, 1, 1),
-            opts: Default::default(),
-        }
-    }
-
-    pub fn with_config(&mut self, opts: Config) -> &App {
-        self.opts = opts;
-        self
-    }
-
-    pub fn from_path<P: AsRef<Path>>(path: P) -> AppResult<App> {
-        let mut f = File::open(path)?;
-        let mut pattern = String::new();
-        f.read_to_string(&mut pattern)?;
-        let grid: Grid = pattern.parse()?;
-        let game = Game::new(grid);
-        Ok(App::new(game))
+            opts: config,
+        })
     }
 
     pub fn run(&mut self) -> AppResult<()> {
+        if self.opts.raw {
+            self.run_as_stream()
+        } else {
+            self.run_as_app()
+        }
+    }
+
+    pub fn run_as_app(&mut self) -> AppResult<()> {
         let mut stdout = io::stdout().into_raw_mode()?;
 
         'Outer: while !self.game.is_over() {

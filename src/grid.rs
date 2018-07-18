@@ -10,6 +10,7 @@ use super::error::AppError;
 const CHAR_ALIVE: char = 'x';
 const CHAR_DEAD: char = '.';
 
+/// A Cell is a point on the `Grid`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Cell(pub i64, pub i64);
 
@@ -20,6 +21,7 @@ impl fmt::Display for Cell {
     }
 }
 
+/// A Grid represents the physical world in which Conway's Game of Life takes place.
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub struct Grid {
     cells: HashSet<Cell>,
@@ -28,18 +30,22 @@ pub struct Grid {
 }
 
 impl Grid {
+    /// Create a new Grid.
     pub fn new(cells: Vec<Cell>, min_width: u64, min_height: u64) -> Grid {
         let mut grid = Grid {
             cells: cells.into_iter().collect(),
             min_width,
             min_height,
         };
+
+        // min_width and min_height will be at least the starting Grid's natural size.
         let (width, height) = grid.natural_size();
         grid.min_width = cmp::max(min_width, width);
         grid.min_height = cmp::max(min_height, height);
         grid
     }
 
+    /// Return the coordinates of a "viewport" surrounding the Grid's activity.
     pub fn viewport(&self) -> ((i64, i64), (i64, i64)) {
         let (width, height) = self.natural_size();
         let (dx, dy) = (
@@ -53,11 +59,78 @@ impl Grid {
         ((x0 - dx0, y0 - dy0), (x1 + dx1, y1 + dy1))
     }
 
+    /// Return the Grid's minimum width and height in a tuple `(min_width, min_height)`.
+    pub fn min_size(&self) -> (u64, u64) {
+        (self.min_width, self.min_height)
+    }
+
+    /// Return whether the Grid is empty.
+    pub fn is_empty(&self) -> bool {
+        self.cells.is_empty()
+    }
+
+    /// Return whether the given Cell is alive.
+    pub fn is_alive(&self, cell: &Cell) -> bool {
+        self.cells.contains(cell)
+    }
+
+    /// Bring the given Cell to life.
+    pub fn set_alive(&mut self, cell: Cell) -> bool {
+        self.cells.insert(cell)
+    }
+
+    /// Kill the given Cell.
+    pub fn set_dead(&mut self, cell: &Cell) -> bool {
+        self.cells.remove(cell)
+    }
+
+    /// Clear the Grid of all living Cells.
+    pub fn clear(&mut self) {
+        self.cells.clear()
+    }
+
+    /// Return the set of all Cells in the Grid that should be evaluated for survival.
+    pub fn active_cells(&self) -> HashSet<Cell> {
+        self.cells
+            .iter()
+            .flat_map(|cell| {
+                let mut cells = self.adjacent_cells(cell);
+                cells.insert(*cell);
+                cells
+            })
+            .collect()
+    }
+
+    /// Return all 8 Cells that are directly adjacent to the given Cell.
+    pub fn adjacent_cells(&self, cell: &Cell) -> HashSet<Cell> {
+        let Cell(x, y) = cell;
+        let mut cells = HashSet::with_capacity(8);
+        for dx in -1..=1 {
+            for dy in -1..=1 {
+                if dx == 0 && dy == 0 {
+                    continue;
+                }
+                cells.insert(Cell(x + dx, y + dy));
+            }
+        }
+        cells
+    }
+
+    /// Return the number of living Cells that are adjacent to the given Cell.
+    pub fn live_neighbors(&self, cell: &Cell) -> usize {
+        self.adjacent_cells(cell)
+            .iter()
+            .filter(|c| self.is_alive(c))
+            .count()
+    }
+
+    // Return the Grid's width and height as the X and Y distance between its furthest Cells.
     fn natural_size(&self) -> (u64, u64) {
         let ((x0, y0), (x1, y1)) = self.calculate_bounds();
         ((x1 - x0 + 1) as u64, (y1 - y0 + 1) as u64)
     }
 
+    // Return the lowest and highest X and Y coordinates represented in the Grid.
     fn calculate_bounds(&self) -> ((i64, i64), (i64, i64)) {
         let mut cells = self.cells.iter();
         if let Some(&Cell(x, y)) = cells.next() {
@@ -79,60 +152,9 @@ impl Grid {
             ((0, 0), (0, 0))
         }
     }
-
-    pub fn is_empty(&self) -> bool {
-        self.cells.is_empty()
-    }
-
-    pub fn is_alive(&self, cell: &Cell) -> bool {
-        self.cells.contains(cell)
-    }
-
-    pub fn set_alive(&mut self, cell: Cell) -> bool {
-        self.cells.insert(cell)
-    }
-
-    pub fn set_dead(&mut self, cell: &Cell) -> bool {
-        self.cells.remove(cell)
-    }
-
-    pub fn clear(&mut self) {
-        self.cells.clear()
-    }
-
-    pub fn active_cells(&self) -> HashSet<Cell> {
-        self.cells
-            .iter()
-            .flat_map(|cell| {
-                let mut cells = self.adjacent_cells(cell);
-                cells.insert(*cell);
-                cells
-            })
-            .collect()
-    }
-
-    pub fn adjacent_cells(&self, cell: &Cell) -> HashSet<Cell> {
-        let Cell(x, y) = cell;
-        let mut cells = HashSet::with_capacity(8);
-        for dx in -1..=1 {
-            for dy in -1..=1 {
-                if dx == 0 && dy == 0 {
-                    continue;
-                }
-                cells.insert(Cell(x + dx, y + dy));
-            }
-        }
-        cells
-    }
-
-    pub fn live_neighbors(&self, cell: &Cell) -> usize {
-        self.adjacent_cells(cell)
-            .iter()
-            .filter(|c| self.is_alive(c))
-            .count()
-    }
 }
 
+/// Create a visual string representation of the Grid with each character representing a Cell.
 impl fmt::Display for Grid {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let ((x0, y0), (x1, y1)) = self.viewport();
@@ -153,6 +175,7 @@ impl fmt::Display for Grid {
     }
 }
 
+/// Parse a Grid from a visual string representation.
 impl FromStr for Grid {
     type Err = AppError;
 
@@ -191,6 +214,20 @@ fn split_int<T: Integer + Copy>(n: T) -> (T, T) {
 mod test {
     use super::*;
     use std::default::Default;
+
+    #[test]
+    fn test_new_grid_size() {
+        assert_eq!(
+            Grid::new(vec![Cell(0, 0), Cell(5, 5)], 3, 3).min_size(),
+            (6, 6),
+            "natural size should override given size if smaller"
+        );
+        assert_eq!(
+            Grid::new(vec![Cell(0, 0), Cell(5, 5)], 8, 8).min_size(),
+            (8, 8),
+            "given size should override natural size if larger"
+        );
+    }
 
     #[test]
     fn test_is_empty() {
