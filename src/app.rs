@@ -4,6 +4,7 @@ use std::io;
 use std::io::prelude::*;
 use std::thread;
 
+use num_integer::div_floor;
 use termion::event::Key;
 use termion::input::TermRead;
 use termion::raw::IntoRawMode;
@@ -32,8 +33,40 @@ impl Rect {
     }
 
     /// Retrieve the Rect's origin X, origin Y, width and height.
-    fn coords(&self) -> (u16, u16, u16, u16) {
+    pub fn shape(&self) -> (u16, u16, u16, u16) {
         (self.x0, self.y0, self.width, self.height)
+    }
+
+    /// Retrieve the Rect's origin X and Y and it's opposite X and Y.
+    pub fn coords(&self) -> (i16, i16, i16, i16) {
+        (
+            self.x0 as i16,
+            self.y0 as i16,
+            (self.x0 + self.width - 1) as i16,
+            (self.y0 + self.height - 1) as i16,
+        )
+    }
+
+    pub fn resized(&self, dx: i16, dy: i16) -> Rect {
+        let (mut x0, mut y0, mut x1, mut y1) = self.coords();
+        let (dx, dy) = (div_floor(dx, 2), div_floor(dy, 2));
+        x0 -= dx;
+        x1 += dx;
+        y0 -= dy;
+        y1 += dy;
+
+        if x0 >= x1 || y0 >= y1 {
+            panic!("cannot shrink Rect more than its own size");
+        } else if x0 <= 0 || y0 <= 0 {
+            panic!("cannot expand Rect out of bounds");
+        }
+
+        Rect {
+            x0: x0 as u16,
+            y0: y0 as u16,
+            width: (x1 - x0 + 1) as u16,
+            height: (y1 - y0 + 1) as u16,
+        }
     }
 }
 
@@ -77,9 +110,9 @@ pub trait Widget {
     }
 
     fn draw_box(&self) -> String {
-        let (x0, y0, width, height) = self.rect().coords();
-        let (x1, y1) = (x0 + width - 1, y0 + height - 1);
-        let inner_width = cmp::min(0, width - 3) as usize;
+        let (_, y0, width, height) = self.rect().shape();
+        let y1 = y0 + height - 1;
+        let inner_width = cmp::max(0, width - 3) as usize;
         let mut s = String::new();
         s.push_str(&format!(
             "{}{}{}\n",
@@ -109,14 +142,9 @@ pub trait Widget {
         W: Write,
         I: Iterator<Item = &'a str>,
     {
-        let (x0, y0, width, height) = rect.coords();
+        let (x0, y0, _, height) = rect.shape();
 
         for (y, line) in lines.take(height as usize).enumerate() {
-            let line = if let Some(s) = line.get(..width as usize) {
-                s
-            } else {
-                &line
-            };
             write!(out, "{}{}", cursor::Goto(x0, y0 + y as u16), line)?;
         }
 
@@ -128,7 +156,8 @@ pub trait Widget {
 
         let rect = self.rect();
         self.render_lines(out, self.draw_box().lines(), &rect)?;
-        self.render_lines(out, self.draw().lines(), &rect)?;
+        let inner_rect = &rect.resized(-2, -2);
+        self.render_lines(out, self.draw().lines(), &inner_rect)?;
 
         out.flush()?;
         Ok(())
@@ -191,7 +220,7 @@ impl App {
         let menu = Menu::new(Rect::new(0, 0, 10, 10), 1, 1);
         let mut game = Game::new(config.pattern.parse()?);
         game.rect = {
-            let (x0, y0, w, h) = menu.rect().coords();
+            let (x0, y0, w, h) = menu.rect().shape();
             let (x, y) = (x0 + w, y0 + h);
             Rect::new(x, y, 10, 10)
         };
