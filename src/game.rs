@@ -103,15 +103,7 @@ mod test {
     #[test]
     fn test_survives_blinker() {
         let game = Game::new(
-            Grid::new(
-                vec![Cell(1, 0), Cell(1, 1), Cell(1, 2)],
-                0,
-                0,
-                0,
-                0,
-                'x',
-                '.',
-            ),
+            Grid::new(vec![Cell(1, 0), Cell(1, 1), Cell(1, 2)], Default::default()),
             Default::default(),
         );
         assert!(

@@ -1,3 +1,4 @@
+use std::default::Default;
 use std::env;
 use std::ffi::OsString;
 use std::fs::File;
@@ -7,12 +8,16 @@ use std::time::Duration;
 
 use clap::{App, Arg, ArgGroup, ArgMatches};
 
+use grid::View;
 use AppResult;
 
 static SAMPLE_DIR: &str = "./sample_patterns";
 
 static SAMPLE_CHOICES: &[&str] = &["beacon", "glider", "oscillator", "toad"];
 static VIEW_CHOICES: &[&str] = &["centered", "fixed", "follow"];
+
+const CHAR_ALIVE: char = 'x';
+const CHAR_DEAD: char = '.';
 
 fn parse_args<'a, I, T>(args: I) -> ArgMatches<'a>
 where
@@ -96,12 +101,12 @@ where
         .get_matches_from(args)
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct Config {
     pub pattern: String,
     pub raw: bool,
     pub stream_delay: Duration,
-    pub view: String,
+    pub view: View,
     pub char_alive: char,
     pub char_dead: char,
     pub min_width: u64,
@@ -118,8 +123,11 @@ impl Config {
         if let Ok(ms) = matches.value_of("delay").unwrap().parse() {
             config.stream_delay = Duration::from_millis(ms);
         }
+
         config.raw = matches.is_present("raw");
-        config.view = matches.value_of("view").unwrap().to_string();
+
+        config.view = matches.value_of("view").unwrap().parse()?;
+
         config.char_alive = matches
             .value_of("live-char")
             .unwrap()
@@ -152,5 +160,22 @@ impl Config {
         };
 
         Ok(config)
+    }
+}
+
+impl Default for Config {
+    fn default() -> Self {
+        Config {
+            pattern: Default::default(),
+            raw: Default::default(),
+            stream_delay: Duration::from_millis(500),
+            view: View::Centered,
+            char_alive: CHAR_ALIVE,
+            char_dead: CHAR_DEAD,
+            min_width: 10,
+            min_height: 10,
+            max_width: 30,
+            max_height: 30,
+        }
     }
 }
