@@ -1,9 +1,10 @@
-use std::default::Default;
 use std::mem;
 use std::thread;
 
-use super::ui::Rect;
-use super::{AppResult, Cell, Config, Grid};
+use config::Config;
+use grid::{Cell, Grid};
+use ui::Rect;
+use AppResult;
 
 pub struct GameIter<'a>(&'a mut Game);
 

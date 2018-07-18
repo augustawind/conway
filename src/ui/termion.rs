@@ -10,8 +10,9 @@ use termion::input::TermRead;
 use termion::raw::IntoRawMode;
 use termion::{clear, cursor, style};
 
-use super::super::{AppResult, Config, Game};
 use super::Rect;
+use config::Config;
+use {AppResult, Game};
 
 pub enum Sym {
     BoxTopLeft,

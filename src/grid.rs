@@ -5,7 +5,7 @@ use std::str::FromStr;
 
 use num_integer::Integer;
 
-use super::error::AppError;
+use AppError;
 
 const CHAR_ALIVE: char = 'x';
 const CHAR_DEAD: char = '.';

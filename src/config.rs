@@ -5,10 +5,9 @@ use std::io::prelude::*;
 use std::path::Path;
 use std::time::Duration;
 
-use clap;
-use clap::{Arg, ArgGroup, ArgMatches};
+use clap::{App, Arg, ArgGroup, ArgMatches};
 
-use super::{AppError, AppResult};
+use {AppError, AppResult};
 
 static SAMPLE_DIR: &str = "./sample_patterns";
 
@@ -27,7 +26,7 @@ where
         Ok(())
     }
 
-    clap::App::new("Conway's Game of Life")
+    App::new("Conway's Game of Life")
         .arg(
             Arg::with_name("file")
                 .long("file")
