@@ -4,7 +4,7 @@ use std::io;
 
 pub type AppResult<T> = Result<T, AppError>;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct AppError(pub String);
 
 impl AppError {
