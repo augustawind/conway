@@ -21,12 +21,33 @@ impl fmt::Display for Cell {
     }
 }
 
+pub enum View {
+    Centered,
+    Fixed,
+    Follow,
+}
+
+impl FromStr for View {
+    type Err = AppError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "centered" => Ok(View::Centered),
+            "fixed" => Ok(View::Fixed),
+            "follow" => Ok(View::Follow),
+            s => Err(AppError(format!("could not parse '{}' into a View", s))),
+        }
+    }
+}
+
 /// A Grid represents the physical world in which Conway's Game of Life takes place.
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub struct Grid {
     cells: HashSet<Cell>,
     min_width: u64,
     min_height: u64,
+    max_width: u64,
+    max_height: u64,
     pub char_alive: char,
     pub char_dead: char,
 }
@@ -37,6 +58,8 @@ impl Grid {
         cells: Vec<Cell>,
         min_width: u64,
         min_height: u64,
+        max_width: u64,
+        max_height: u64,
         char_alive: char,
         char_dead: char,
     ) -> Grid {
@@ -44,6 +67,8 @@ impl Grid {
             cells: cells.into_iter().collect(),
             min_width,
             min_height,
+            max_width,
+            max_height,
             char_alive,
             char_dead,
         };
@@ -52,15 +77,36 @@ impl Grid {
         let (width, height) = grid.natural_size();
         grid.min_width = cmp::max(min_width, width);
         grid.min_height = cmp::max(min_height, height);
+        grid.max_width = cmp::max(max_width, grid.min_width);
+        grid.max_height = cmp::max(max_height, grid.min_height);
         grid
+    }
+
+    pub fn fixed_viewport(&self) -> ((i64, i64), (i64, i64)) {
+        let (width, height) = self.natural_size();
+        let (dx, dy) = (
+            cmp::max(0, self.min_width - width),
+            cmp::max(0, self.min_height - height),
+        );
+        let (dx, dy) = (
+            cmp::min(dx, self.max_width - width) as i64,
+            cmp::min(dy, self.max_height - height) as i64,
+        );
+
+        let (_, (x1, y1)) = self.calculate_bounds();
+        ((0, 0), (x1 + dx, y1 + dy))
     }
 
     /// Return the coordinates of a "viewport" surrounding the Grid's activity.
     pub fn viewport(&self) -> ((i64, i64), (i64, i64)) {
         let (width, height) = self.natural_size();
         let (dx, dy) = (
-            cmp::max(0, self.min_width - width) as i64,
-            cmp::max(0, self.min_height - height) as i64,
+            cmp::max(0, self.min_width - width),
+            cmp::max(0, self.min_height - height),
+        );
+        let (dx, dy) = (
+            cmp::min(dx, self.max_width - width) as i64,
+            cmp::min(dy, self.max_height - height) as i64,
         );
 
         let ((x0, y0), (x1, y1)) = self.calculate_bounds();
@@ -169,10 +215,12 @@ impl fmt::Display for Grid {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let ((x0, y0), (x1, y1)) = self.viewport();
 
+        let mut coords = Vec::new();
         let mut output = String::new();
         for y in y0..=y1 {
             for x in x0..=x1 {
                 output.push(if self.is_alive(&Cell(x, y)) {
+                    coords.push(Cell(x, y).to_string());
                     self.char_alive
                 } else {
                     self.char_dead
@@ -180,6 +228,7 @@ impl fmt::Display for Grid {
             }
             output.push('\n');
         }
+        output.push_str(&format!("\n{}", coords.as_slice().join(" ")));
 
         write!(f, "{}", output)
     }
@@ -210,7 +259,9 @@ impl FromStr for Grid {
             }
         }
 
-        Ok(Grid::new(cells, width, height, CHAR_ALIVE, CHAR_DEAD))
+        Ok(Grid::new(
+            cells, width, height, width, height, CHAR_ALIVE, CHAR_DEAD,
+        ))
     }
 }
 
@@ -228,12 +279,12 @@ mod test {
     #[test]
     fn test_new_grid_size() {
         assert_eq!(
-            Grid::new(vec![Cell(0, 0), Cell(5, 5)], 3, 3, 'x', '.').min_size(),
+            Grid::new(vec![Cell(0, 0), Cell(5, 5)], 3, 3, 0, 0, 'x', '.').min_size(),
             (6, 6),
             "natural size should override given size if smaller"
         );
         assert_eq!(
-            Grid::new(vec![Cell(0, 0), Cell(5, 5)], 8, 8, 'x', '.').min_size(),
+            Grid::new(vec![Cell(0, 0), Cell(5, 5)], 8, 8, 0, 0, 'x', '.').min_size(),
             (8, 8),
             "given size should override natural size if larger"
         );
@@ -243,13 +294,13 @@ mod test {
     fn test_is_empty() {
         let grid: Grid = Default::default();
         assert!(grid.is_empty());
-        let grid = Grid::new(vec![Cell(0, 0)], 0, 0, 'x', '.');
+        let grid = Grid::new(vec![Cell(0, 0)], 0, 0, 0, 0, 'x', '.');
         assert!(!grid.is_empty());
     }
 
     #[test]
     fn test_is_alive() {
-        let grid = Grid::new(vec![Cell(-1, 4), Cell(8, 8)], 0, 0, 'x', '.');
+        let grid = Grid::new(vec![Cell(-1, 4), Cell(8, 8)], 0, 0, 0, 0, 'x', '.');
         assert!(&grid.is_alive(&Cell(-1, 4)));
         assert!(&grid.is_alive(&Cell(8, 8)));
         assert!(!&grid.is_alive(&Cell(8, 4)));
@@ -273,6 +324,8 @@ mod test {
                 vec![Cell(2, 1), Cell(-3, 0), Cell(-2, 1), Cell(-2, 0)],
                 7,
                 7,
+                0,
+                0,
                 'x',
                 '.'
             ).viewport(),
@@ -284,6 +337,8 @@ mod test {
                 vec![Cell(53, 4), Cell(2, 1), Cell(-12, 33)],
                 88,
                 32,
+                0,
+                0,
                 'x',
                 '.'
             ).viewport(),
@@ -295,6 +350,8 @@ mod test {
                 vec![Cell(2, 3), Cell(3, 3), Cell(5, 4), Cell(4, 2)],
                 10,
                 10,
+                0,
+                0,
                 'x',
                 '.'
             ).viewport(),
@@ -309,21 +366,30 @@ mod test {
                 vec![Cell(2, 1), Cell(-3, 0), Cell(-2, 1), Cell(-2, 0)],
                 0,
                 0,
+                0,
+                0,
                 'x',
                 '.'
             ).calculate_bounds(),
             ((-3, 0), (2, 1))
         );
         assert_eq!(
-            Grid::new(vec![Cell(53, 4), Cell(2, 1), Cell(-12, 33)], 0, 0, 'x', '.')
-                .calculate_bounds(),
+            Grid::new(
+                vec![Cell(53, 4), Cell(2, 1), Cell(-12, 33)],
+                0,
+                0,
+                0,
+                0,
+                'x',
+                '.'
+            ).calculate_bounds(),
             ((-12, 1), (53, 33))
         );
     }
 
     #[test]
     fn test_active_cells() {
-        let grid = Grid::new(vec![Cell(0, 0), Cell(1, 1)], 0, 0, 'x', '.');
+        let grid = Grid::new(vec![Cell(0, 0), Cell(1, 1)], 0, 0, 0, 0, 'x', '.');
         assert_eq!(
             grid.active_cells(),
             hashset![
@@ -349,6 +415,8 @@ mod test {
     fn test_live_neighbors() {
         let grid = Grid::new(
             vec![Cell(-1, -1), Cell(-1, -2), Cell(0, 0), Cell(1, 0)],
+            0,
+            0,
             0,
             0,
             'x',
@@ -381,6 +449,8 @@ mod test {
                 vec![Cell(0, 0), Cell(1, 0), Cell(2, 1), Cell(1, 2)],
                 3,
                 3,
+                0,
+                0,
                 'x',
                 '.'
             ),

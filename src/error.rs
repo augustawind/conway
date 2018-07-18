@@ -7,6 +7,12 @@ pub type AppResult<T> = Result<T, AppError>;
 #[derive(Debug)]
 pub struct AppError(pub String);
 
+impl AppError {
+    pub fn new(s: &str) -> AppError {
+        AppError(s.to_owned())
+    }
+}
+
 impl fmt::Display for AppError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "conway: error: {}", self.0)

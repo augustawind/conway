@@ -13,7 +13,7 @@ use super::AppResult;
 static SAMPLE_DIR: &str = "./sample_patterns";
 
 static SAMPLE_CHOICES: &[&str] = &["beacon", "glider", "oscillator", "toad"];
-static VIEW_CHOICES: &[&str] = &["moving", "fixed"];
+static VIEW_CHOICES: &[&str] = &["centered", "fixed", "follow"];
 
 fn parse_args<'a, I, T>(args: I) -> ArgMatches<'a>
 where
@@ -63,7 +63,7 @@ where
         .arg(
             Arg::with_name("view")
                 .long("view")
-                .default_value("moving")
+                .default_value("centered")
                 .possible_values(VIEW_CHOICES)
                 .help("viewing mode"),
         )
