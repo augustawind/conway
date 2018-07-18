@@ -90,8 +90,8 @@ pub struct Config {
     pub raw: bool,
     pub stream_delay: Duration,
     pub view: String,
-    pub live_char: char,
-    pub dead_char: char,
+    pub char_alive: char,
+    pub char_dead: char,
 }
 
 impl Config {
@@ -104,13 +104,13 @@ impl Config {
         }
         config.raw = matches.is_present("raw");
         config.view = matches.value_of("view").unwrap().to_string();
-        config.live_char = matches
+        config.char_alive = matches
             .value_of("live-char")
             .unwrap()
             .chars()
             .next()
             .unwrap();
-        config.dead_char = matches
+        config.char_dead = matches
             .value_of("dead-char")
             .unwrap()
             .chars()

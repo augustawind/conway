@@ -27,15 +27,25 @@ pub struct Grid {
     cells: HashSet<Cell>,
     min_width: u64,
     min_height: u64,
+    pub char_alive: char,
+    pub char_dead: char,
 }
 
 impl Grid {
     /// Create a new Grid.
-    pub fn new(cells: Vec<Cell>, min_width: u64, min_height: u64) -> Grid {
+    pub fn new(
+        cells: Vec<Cell>,
+        min_width: u64,
+        min_height: u64,
+        char_alive: char,
+        char_dead: char,
+    ) -> Grid {
         let mut grid = Grid {
             cells: cells.into_iter().collect(),
             min_width,
             min_height,
+            char_alive,
+            char_dead,
         };
 
         // min_width and min_height will be at least the starting Grid's natural size.
@@ -163,9 +173,9 @@ impl fmt::Display for Grid {
         for y in y0..=y1 {
             for x in x0..=x1 {
                 output.push(if self.is_alive(&Cell(x, y)) {
-                    CHAR_ALIVE
+                    self.char_alive
                 } else {
-                    CHAR_DEAD
+                    self.char_dead
                 });
             }
             output.push('\n');
@@ -200,7 +210,7 @@ impl FromStr for Grid {
             }
         }
 
-        Ok(Grid::new(cells, width, height))
+        Ok(Grid::new(cells, width, height, CHAR_ALIVE, CHAR_DEAD))
     }
 }
 
@@ -218,12 +228,12 @@ mod test {
     #[test]
     fn test_new_grid_size() {
         assert_eq!(
-            Grid::new(vec![Cell(0, 0), Cell(5, 5)], 3, 3).min_size(),
+            Grid::new(vec![Cell(0, 0), Cell(5, 5)], 3, 3, 'x', '.').min_size(),
             (6, 6),
             "natural size should override given size if smaller"
         );
         assert_eq!(
-            Grid::new(vec![Cell(0, 0), Cell(5, 5)], 8, 8).min_size(),
+            Grid::new(vec![Cell(0, 0), Cell(5, 5)], 8, 8, 'x', '.').min_size(),
             (8, 8),
             "given size should override natural size if larger"
         );
@@ -233,13 +243,13 @@ mod test {
     fn test_is_empty() {
         let grid: Grid = Default::default();
         assert!(grid.is_empty());
-        let grid = Grid::new(vec![Cell(0, 0)], 0, 0);
+        let grid = Grid::new(vec![Cell(0, 0)], 0, 0, 'x', '.');
         assert!(!grid.is_empty());
     }
 
     #[test]
     fn test_is_alive() {
-        let grid = Grid::new(vec![Cell(-1, 4), Cell(8, 8)], 0, 0);
+        let grid = Grid::new(vec![Cell(-1, 4), Cell(8, 8)], 0, 0, 'x', '.');
         assert!(&grid.is_alive(&Cell(-1, 4)));
         assert!(&grid.is_alive(&Cell(8, 8)));
         assert!(!&grid.is_alive(&Cell(8, 4)));
@@ -262,18 +272,32 @@ mod test {
             Grid::new(
                 vec![Cell(2, 1), Cell(-3, 0), Cell(-2, 1), Cell(-2, 0)],
                 7,
-                7
+                7,
+                'x',
+                '.'
             ).viewport(),
             ((-3, -2), (3, 4)),
             "should raise the bounds to match min_width and min_height, if smaller"
         );
         assert_eq!(
-            Grid::new(vec![Cell(53, 4), Cell(2, 1), Cell(-12, 33)], 88, 32).viewport(),
+            Grid::new(
+                vec![Cell(53, 4), Cell(2, 1), Cell(-12, 33)],
+                88,
+                32,
+                'x',
+                '.'
+            ).viewport(),
             ((-23, 1), (64, 33)),
             "should not raise the bounds if they are larger than min_width and min_height"
         );
         assert_eq!(
-            Grid::new(vec![Cell(2, 3), Cell(3, 3), Cell(5, 4), Cell(4, 2)], 10, 10).viewport(),
+            Grid::new(
+                vec![Cell(2, 3), Cell(3, 3), Cell(5, 4), Cell(4, 2)],
+                10,
+                10,
+                'x',
+                '.'
+            ).viewport(),
             ((-1, -1), (8, 8)),
         );
     }
@@ -284,19 +308,22 @@ mod test {
             Grid::new(
                 vec![Cell(2, 1), Cell(-3, 0), Cell(-2, 1), Cell(-2, 0)],
                 0,
-                0
+                0,
+                'x',
+                '.'
             ).calculate_bounds(),
             ((-3, 0), (2, 1))
         );
         assert_eq!(
-            Grid::new(vec![Cell(53, 4), Cell(2, 1), Cell(-12, 33)], 0, 0).calculate_bounds(),
+            Grid::new(vec![Cell(53, 4), Cell(2, 1), Cell(-12, 33)], 0, 0, 'x', '.')
+                .calculate_bounds(),
             ((-12, 1), (53, 33))
         );
     }
 
     #[test]
     fn test_active_cells() {
-        let grid = Grid::new(vec![Cell(0, 0), Cell(1, 1)], 0, 0);
+        let grid = Grid::new(vec![Cell(0, 0), Cell(1, 1)], 0, 0, 'x', '.');
         assert_eq!(
             grid.active_cells(),
             hashset![
@@ -324,6 +351,8 @@ mod test {
             vec![Cell(-1, -1), Cell(-1, -2), Cell(0, 0), Cell(1, 0)],
             0,
             0,
+            'x',
+            '.',
         );
         assert_eq!(
             grid.live_neighbors(&Cell(0, 0)),
@@ -348,7 +377,13 @@ mod test {
             .unwrap();
         assert_eq!(
             grid,
-            Grid::new(vec![Cell(0, 0), Cell(1, 0), Cell(2, 1), Cell(1, 2)], 3, 3),
+            Grid::new(
+                vec![Cell(0, 0), Cell(1, 0), Cell(2, 1), Cell(1, 2)],
+                3,
+                3,
+                'x',
+                '.'
+            ),
         );
 
         assert!(Grid::from_str("").is_err());
