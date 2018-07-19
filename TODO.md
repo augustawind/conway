@@ -1,5 +1,4 @@
-- allow comments in grid files
-- allow config via grid files:
+- allow config via grid files
 
 - implement fixed view
 - implement auto view (favor fixed view, then moving view)
