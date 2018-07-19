@@ -54,12 +54,14 @@ impl Grid {
             opts,
         };
 
-        // min_width and min_height will be at least the starting Grid's natural size.
         let (width, height) = grid.natural_size();
+        // set min dimensions to at least the starting Grid's natural size
         grid.opts.min_width = cmp::max(grid.opts.min_width, width);
         grid.opts.min_height = cmp::max(grid.opts.min_height, height);
+        // set max dimensions to at least the Grid's min dimensions
         grid.opts.max_width = cmp::max(grid.opts.max_width, grid.opts.min_width);
         grid.opts.max_height = cmp::max(grid.opts.max_height, grid.opts.min_height);
+
         grid
     }
 
@@ -69,6 +71,11 @@ impl Grid {
         let mut height = 0;
 
         for (y, line) in config.pattern.trim().lines().enumerate() {
+            let line = line.trim();
+            if line.starts_with("#") {
+                continue;
+            }
+
             height += 1;
             width = cmp::max(width, line.len() as u64);
             for (x, ch) in line.chars().enumerate() {

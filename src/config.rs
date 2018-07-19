@@ -14,7 +14,7 @@ use AppResult;
 
 static SAMPLE_DIR: &str = "./sample_patterns";
 
-static SAMPLE_CHOICES: &[&str] = &["beacon", "glider", "oscillator", "toad"];
+static SAMPLE_CHOICES: &[&str] = &["beacon", "glider", "blinker", "toad"];
 static VIEW_CHOICES: &[&str] = &["centered", "fixed", "follow"];
 
 const CHAR_ALIVE: char = 'x';
