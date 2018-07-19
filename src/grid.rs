@@ -70,33 +70,22 @@ impl Grid {
         let mut width = 0;
         let mut height = 0;
 
+        for (y, line) in config
+            .pattern
+            .trim()
+            .lines()
+            .filter(|line| !line.starts_with('#'))
+            .enumerate()
         {
-            let mut iter = config
-                .pattern
-                .trim()
-                .lines()
-                .filter(|line| !line.starts_with('#'));
-
-            let mut args = String::new();
-            while let Some(mut line) = iter.next() {
-                line = line.trim();
-                if !line.starts_with("@@") {
-                    break;
-                }
-                args.push_str(&line[2..]);
-            }
-
-            for (y, line) in iter.enumerate() {
-                height += 1;
-                width = cmp::max(width, line.len() as u64);
-                for (x, ch) in line.chars().enumerate() {
-                    // Living Cells are added to the Grid.
-                    if ch == config.char_alive {
-                        cells.push(Cell(x as i64, y as i64));
-                    // Dead Cells are ignored, and any other symbol is an error.
-                    } else if ch != config.char_dead {
-                        return Err(From::from(format!("unknown character: '{}'", ch)));
-                    }
+            height += 1;
+            width = cmp::max(width, line.len() as u64);
+            for (x, ch) in line.chars().enumerate() {
+                // Living Cells are added to the Grid.
+                if ch == config.char_alive {
+                    cells.push(Cell(x as i64, y as i64));
+                // Dead Cells are ignored, and any other symbol is an error.
+                } else if ch != config.char_dead {
+                    return Err(From::from(format!("unknown character: '{}'", ch)));
                 }
             }
 
