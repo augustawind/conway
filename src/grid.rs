@@ -70,29 +70,40 @@ impl Grid {
         let mut width = 0;
         let mut height = 0;
 
-        for (y, line) in config.pattern.trim().lines().enumerate() {
-            let line = line.trim();
-            if line.starts_with("#") {
-                continue;
+        {
+            let mut iter = config
+                .pattern
+                .trim()
+                .lines()
+                .filter(|line| !line.starts_with('#'));
+
+            while let Some(mut line) = iter.next() {
+                line = line.trim();
+                if !line.starts_with("@@") {
+                    break;
+                }
+                line = &line[2..];
             }
 
-            height += 1;
-            width = cmp::max(width, line.len() as u64);
-            for (x, ch) in line.chars().enumerate() {
-                // Living Cells are added to the Grid.
-                if ch == config.char_alive {
-                    cells.push(Cell(x as i64, y as i64));
-                // Dead Cells are ignored, and any other symbol is an error.
-                } else if ch != config.char_dead {
-                    return Err(From::from(format!("unknown character: '{}'", ch)));
+            for (y, line) in iter.enumerate() {
+                height += 1;
+                width = cmp::max(width, line.len() as u64);
+                for (x, ch) in line.chars().enumerate() {
+                    // Living Cells are added to the Grid.
+                    if ch == config.char_alive {
+                        cells.push(Cell(x as i64, y as i64));
+                    // Dead Cells are ignored, and any other symbol is an error.
+                    } else if ch != config.char_dead {
+                        return Err(From::from(format!("unknown character: '{}'", ch)));
+                    }
                 }
             }
-        }
 
-        config.min_width = width;
-        config.min_height = height;
-        config.max_width = width;
-        config.max_height = height;
+            config.min_width = width;
+            config.min_height = height;
+            config.max_width = width;
+            config.max_height = height;
+        }
 
         Ok(Grid::new(cells, config))
     }
