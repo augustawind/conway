@@ -5,7 +5,7 @@ use std::str::FromStr;
 
 use num_integer::Integer;
 
-use config::Config;
+use config::GridConfig;
 use {AppError, AppResult};
 
 /// A Cell is a point on the `Grid`.
@@ -53,7 +53,7 @@ pub struct Grid {
 
 impl Grid {
     /// Create a new Grid.
-    pub fn new(cells: Vec<Cell>, opts: Config) -> Self {
+    pub fn new(cells: Vec<Cell>, opts: GridConfig) -> Self {
         let mut grid = Grid {
             cells: cells.into_iter().collect(),
             min_width: opts.min_width,
@@ -73,7 +73,7 @@ impl Grid {
         grid
     }
 
-    pub fn from_config(mut config: Config) -> AppResult<Self> {
+    pub fn from_config(mut config: GridConfig) -> AppResult<Self> {
         let mut cells = Vec::new();
         let mut width = 0;
         let mut height = 0;
@@ -253,13 +253,13 @@ impl fmt::Display for Grid {
 
 /// Parse a Grid from a block of structured text.
 ///
-/// Since `from_str` takes no parameters, a default Config is used.
-/// To create your own Config, use `from_config` instead.
+/// Since `from_str` takes no parameters, a default GridConfig is used.
+/// To use your own GridConfig, use `from_config` instead.
 impl FromStr for Grid {
     type Err = AppError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Grid::from_config(Config {
+        Grid::from_config(GridConfig {
             pattern: s.to_owned(),
             ..Default::default()
         })
@@ -282,7 +282,7 @@ mod test {
         assert_eq!(
             Grid::new(
                 vec![Cell(0, 0), Cell(5, 5)],
-                Config {
+                GridConfig {
                     min_width: 3,
                     min_height: 3,
                     ..Default::default()
@@ -294,7 +294,7 @@ mod test {
         assert_eq!(
             Grid::new(
                 vec![Cell(0, 0), Cell(5, 5)],
-                Config {
+                GridConfig {
                     min_width: 8,
                     min_height: 8,
                     ..Default::default()
@@ -337,7 +337,7 @@ mod test {
         assert_eq!(
             Grid::new(
                 vec![Cell(2, 1), Cell(-3, 0), Cell(-2, 1), Cell(-2, 0)],
-                Config {
+                GridConfig {
                     min_width: 7,
                     min_height: 7,
                     ..Default::default()
@@ -349,7 +349,7 @@ mod test {
         assert_eq!(
             Grid::new(
                 vec![Cell(53, 4), Cell(2, 1), Cell(-12, 33)],
-                Config {
+                GridConfig {
                     min_width: 88,
                     max_width: 32,
                     ..Default::default()
@@ -361,7 +361,7 @@ mod test {
         assert_eq!(
             Grid::new(
                 vec![Cell(2, 3), Cell(3, 3), Cell(5, 4), Cell(4, 2)],
-                Config {
+                GridConfig {
                     min_width: 10,
                     max_width: 10,
                     ..Default::default()
@@ -444,7 +444,7 @@ mod test {
     //             grid,
     //             Grid::new(
     //                 vec![Cell(0, 0), Cell(1, 0), Cell(2, 1), Cell(1, 2)],
-    //                 Config {
+    //                 GridConfig {
     //                     min_width: 3,
     //                     min_height: 3,
     //                     ..Default::default()

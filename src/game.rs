@@ -1,7 +1,7 @@
 use std::mem;
 use std::thread;
 
-use config::Config;
+use config::{ConfigSet, GameConfig};
 use grid::{Cell, Grid};
 use ui::Rect;
 use AppResult;
@@ -16,7 +16,7 @@ impl<'a> Iterator for GameIter<'a> {
             return None;
         }
         self.0.tick();
-        thread::sleep(self.0.opts.stream_delay);
+        thread::sleep(self.0.opts.tick_delay);
         Some(self.0.grid.to_string())
     }
 }
@@ -26,19 +26,19 @@ impl<'a> Iterator for GameIter<'a> {
 pub struct Game {
     pub grid: Grid,
     swap: Grid,
-    opts: Config,
     pub rect: Rect,
+    pub opts: GameConfig,
 }
 
 impl Game {
     pub fn load() -> AppResult<Game> {
-        let opts = Config::load()?;
-        let grid = Grid::from_config(opts.clone())?;
-        Ok(Game::new(grid, opts))
+        let config = ConfigSet::load()?;
+        let grid = Grid::from_config(config.grid)?;
+        Ok(Game::new(grid, config.game))
     }
 
     /// Create a new Game from a Grid.
-    pub fn new(grid: Grid, opts: Config) -> Game {
+    pub fn new(grid: Grid, opts: GameConfig) -> Game {
         let rect = {
             let (w, h) = grid.min_size();
             Rect::new(0, 0, w as u16, h as u16)
@@ -50,8 +50,8 @@ impl Game {
         Game {
             grid,
             swap,
-            opts,
             rect,
+            opts,
         }
     }
 

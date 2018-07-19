@@ -91,11 +91,21 @@ where
         .get_matches_from(args)
 }
 
+#[derive(Debug)]
+pub struct ConfigSet {
+    pub grid: GridConfig,
+    pub game: GameConfig,
+}
+
 #[derive(Debug, Clone)]
-pub struct Config {
+pub struct GameConfig {
+    pub raw_mode: bool,
+    pub tick_delay: Duration,
+}
+
+#[derive(Debug, Clone)]
+pub struct GridConfig {
     pub pattern: String,
-    pub raw: bool,
-    pub stream_delay: Duration,
     pub view: View,
     pub char_alive: char,
     pub char_dead: char,
@@ -105,52 +115,62 @@ pub struct Config {
     pub max_height: u64,
 }
 
-impl Config {
-    pub fn load() -> AppResult<Config> {
+impl ConfigSet {
+    pub fn load() -> AppResult<ConfigSet> {
         let matches = parse_args(env::args_os());
-        let mut config = Config::default();
 
-        config.stream_delay = Duration::from_millis(matches.value_of("delay").unwrap().parse()?);
+        let conf = ConfigSet {
+            game: GameConfig {
+                raw_mode: matches.is_present("raw"),
+                tick_delay: Duration::from_millis(matches.value_of("delay").unwrap().parse()?),
+            },
+            grid: GridConfig {
+                view: matches.value_of("view").unwrap().parse()?,
 
-        config.raw = matches.is_present("raw");
+                char_alive: matches
+                    .value_of("live-char")
+                    .map_or(Ok(CHAR_ALIVE), FromStr::from_str)?,
+                char_dead: matches
+                    .value_of("dead-char")
+                    .map_or(Ok(CHAR_DEAD), FromStr::from_str)?,
 
-        config.view = matches.value_of("view").unwrap().parse()?;
+                min_width: matches.value_of("min-width").unwrap().parse()?,
+                min_height: matches.value_of("min-width").unwrap().parse()?,
+                max_width: matches.value_of("max-width").unwrap().parse()?,
+                max_height: matches.value_of("max-width").unwrap().parse()?,
 
-        config.char_alive = matches
-            .value_of("live-char")
-            .map_or(Ok(CHAR_ALIVE), FromStr::from_str)?;
-        config.char_dead = matches
-            .value_of("dead-char")
-            .map_or(Ok(CHAR_DEAD), FromStr::from_str)?;
-
-        config.min_width = matches.value_of("min-width").unwrap().parse()?;
-        config.min_height = matches.value_of("min-width").unwrap().parse()?;
-        config.max_width = matches.value_of("max-width").unwrap().parse()?;
-        config.max_height = matches.value_of("max-width").unwrap().parse()?;
-
-        config.pattern = {
-            let path = if let Some(file) = matches.value_of("file") {
-                Path::new(file).to_path_buf()
-            } else {
-                let file = matches.value_of("sample").unwrap();
-                Path::new(SAMPLE_DIR).join(file)
-            };
-            let mut f = File::open(path)?;
-            let mut pattern = String::new();
-            f.read_to_string(&mut pattern)?;
-            pattern
+                pattern: {
+                    let path = if let Some(file) = matches.value_of("file") {
+                        Path::new(file).to_path_buf()
+                    } else {
+                        let file = matches.value_of("sample").unwrap();
+                        Path::new(SAMPLE_DIR).join(file)
+                    };
+                    let mut f = File::open(path)?;
+                    let mut pattern = String::new();
+                    f.read_to_string(&mut pattern)?;
+                    pattern
+                },
+            },
         };
 
-        Ok(config)
+        Ok(conf)
     }
 }
 
-impl Default for Config {
+impl Default for GameConfig {
     fn default() -> Self {
-        Config {
+        GameConfig {
+            raw_mode: false,
+            tick_delay: Duration::from_millis(500),
+        }
+    }
+}
+
+impl Default for GridConfig {
+    fn default() -> Self {
+        GridConfig {
             pattern: Default::default(),
-            raw: Default::default(),
-            stream_delay: Duration::from_millis(500),
             view: View::Centered,
             char_alive: CHAR_ALIVE,
             char_dead: CHAR_DEAD,

@@ -11,7 +11,6 @@ use termion::raw::IntoRawMode;
 use termion::{clear, cursor, style};
 
 use super::Rect;
-use config::Config;
 use {AppResult, Game};
 
 pub enum Sym {
@@ -159,17 +158,16 @@ impl Widget for Game {
 pub struct TermionUI {
     game: Game,
     menu: Menu,
-    opts: Config,
 }
 
 impl TermionUI {
-    pub fn new(mut game: Game, opts: Config) -> TermionUI {
+    pub fn new(mut game: Game) -> TermionUI {
         let menu = Menu::new(Rect::new(0, 0, 23, 20), 1, 1);
         game.rect = {
             let (x0, y0, width, height) = menu.rect().shape();
             Rect::new(x0 + width - 1, y0, 40, height)
         };
-        TermionUI { game, menu, opts }
+        TermionUI { game, menu }
     }
 
     pub fn render(&mut self, stdout: &mut io::StdoutLock) -> AppResult<()> {
@@ -179,7 +177,7 @@ impl TermionUI {
     }
 
     pub fn run(&mut self) -> AppResult<()> {
-        if self.opts.raw {
+        if self.game.opts.raw_mode {
             self.run_as_stream()
         } else {
             self.run_as_app()
@@ -218,7 +216,7 @@ impl TermionUI {
             write!(stdout, "\n")?;
             stdout.flush()?;
             self.game.tick();
-            thread::sleep(self.opts.stream_delay);
+            thread::sleep(self.game.opts.tick_delay);
         }
         Ok(())
     }
