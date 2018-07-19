@@ -33,9 +33,7 @@ pub struct Game {
 impl Game {
     pub fn load() -> AppResult<Game> {
         let opts = Config::load()?;
-        let mut grid: Grid = opts.pattern.parse()?;
-        grid.char_alive = opts.char_alive;
-        grid.char_dead = opts.char_dead;
+        let grid = Grid::from_config(opts.clone())?;
         Ok(Game::new(grid, opts))
     }
 

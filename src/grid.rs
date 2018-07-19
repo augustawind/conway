@@ -6,7 +6,7 @@ use std::str::FromStr;
 use num_integer::Integer;
 
 use config::Config;
-use AppError;
+use {AppError, AppResult};
 
 /// A Cell is a point on the `Grid`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -19,7 +19,7 @@ impl fmt::Display for Cell {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum View {
     Centered,
     Fixed,
@@ -53,7 +53,7 @@ pub struct Grid {
 
 impl Grid {
     /// Create a new Grid.
-    pub fn new(cells: Vec<Cell>, opts: Config) -> Grid {
+    pub fn new(cells: Vec<Cell>, opts: Config) -> Self {
         let mut grid = Grid {
             cells: cells.into_iter().collect(),
             min_width: opts.min_width,
@@ -71,6 +71,33 @@ impl Grid {
         grid.max_width = cmp::max(opts.max_width, grid.min_width);
         grid.max_height = cmp::max(opts.max_height, grid.min_height);
         grid
+    }
+
+    pub fn from_config(mut config: Config) -> AppResult<Self> {
+        let mut cells = Vec::new();
+        let mut width = 0;
+        let mut height = 0;
+
+        for (y, line) in config.pattern.trim().lines().enumerate() {
+            height += 1;
+            width = cmp::max(width, line.len() as u64);
+            for (x, ch) in line.chars().enumerate() {
+                // Living Cells are added to the Grid.
+                if ch == config.char_alive {
+                    cells.push(Cell(x as i64, y as i64));
+                // Dead Cells are ignored, and any other symbol is an error.
+                } else if ch != config.char_dead {
+                    return Err(From::from(format!("unknown character: '{}'", ch)));
+                }
+            }
+        }
+
+        config.min_width = width;
+        config.min_height = height;
+        config.max_width = width;
+        config.max_height = height;
+
+        Ok(Grid::new(cells, config))
     }
 
     pub fn fixed_viewport(&self) -> ((i64, i64), (i64, i64)) {
@@ -224,34 +251,18 @@ impl fmt::Display for Grid {
     }
 }
 
-/// Parse a Grid from a visual string representation.
+/// Parse a Grid from a block of structured text.
+///
+/// Since `from_str` takes no parameters, a default Config is used.
+/// To create your own Config, use `from_config` instead.
 impl FromStr for Grid {
     type Err = AppError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let mut cells = Vec::new();
-        let mut config: Config = Default::default();
-        let mut width = 0;
-        let mut height = 0;
-
-        for (y, line) in s.trim().lines().enumerate() {
-            height += 1;
-            width = cmp::max(width, line.len() as u64);
-            for (x, ch) in line.chars().enumerate() {
-                if ch == config.char_alive {
-                    cells.push(Cell(x as i64, y as i64));
-                } else if ch != config.char_dead {
-                    return Err(From::from(format!("unknown character: '{}'", ch)));
-                }
-            }
-        }
-
-        config.min_width = width;
-        config.min_height = height;
-        config.max_width = width;
-        config.max_height = height;
-
-        Ok(Grid::new(cells, config))
+        Grid::from_config(Config {
+            pattern: s.to_owned(),
+            ..Default::default()
+        })
     }
 }
 
