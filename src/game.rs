@@ -37,7 +37,6 @@ impl Game {
         Ok(Game::new(grid, config.game))
     }
 
-    /// Create a new Game from a Grid.
     pub fn new(grid: Grid, opts: GameConfig) -> Game {
         let rect = {
             let (w, h) = grid.min_size();

@@ -97,13 +97,13 @@ pub struct ConfigSet {
     pub game: GameConfig,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct GameConfig {
     pub raw_mode: bool,
     pub tick_delay: Duration,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct GridConfig {
     pub pattern: String,
     pub view: View,

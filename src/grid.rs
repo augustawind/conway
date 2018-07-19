@@ -19,7 +19,7 @@ impl fmt::Display for Cell {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum View {
     Centered,
     Fixed,
@@ -43,12 +43,7 @@ impl FromStr for View {
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub struct Grid {
     cells: HashSet<Cell>,
-    min_width: u64,
-    min_height: u64,
-    max_width: u64,
-    max_height: u64,
-    pub char_alive: char,
-    pub char_dead: char,
+    opts: GridConfig,
 }
 
 impl Grid {
@@ -56,20 +51,15 @@ impl Grid {
     pub fn new(cells: Vec<Cell>, opts: GridConfig) -> Self {
         let mut grid = Grid {
             cells: cells.into_iter().collect(),
-            min_width: opts.min_width,
-            min_height: opts.min_height,
-            max_width: opts.max_width,
-            max_height: opts.max_height,
-            char_alive: opts.char_alive,
-            char_dead: opts.char_dead,
+            opts,
         };
 
         // min_width and min_height will be at least the starting Grid's natural size.
         let (width, height) = grid.natural_size();
-        grid.min_width = cmp::max(opts.min_width, width);
-        grid.min_height = cmp::max(opts.min_height, height);
-        grid.max_width = cmp::max(opts.max_width, grid.min_width);
-        grid.max_height = cmp::max(opts.max_height, grid.min_height);
+        grid.opts.min_width = cmp::max(grid.opts.min_width, width);
+        grid.opts.min_height = cmp::max(grid.opts.min_height, height);
+        grid.opts.max_width = cmp::max(grid.opts.max_width, grid.opts.min_width);
+        grid.opts.max_height = cmp::max(grid.opts.max_height, grid.opts.min_height);
         grid
     }
 
@@ -103,12 +93,12 @@ impl Grid {
     pub fn fixed_viewport(&self) -> ((i64, i64), (i64, i64)) {
         let (width, height) = self.natural_size();
         let (dx, dy) = (
-            cmp::max(0, self.min_width - width),
-            cmp::max(0, self.min_height - height),
+            cmp::max(0, self.opts.min_width - width),
+            cmp::max(0, self.opts.min_height - height),
         );
         let (dx, dy) = (
-            cmp::min(dx, self.max_width - width) as i64,
-            cmp::min(dy, self.max_height - height) as i64,
+            cmp::min(dx, self.opts.max_width - width) as i64,
+            cmp::min(dy, self.opts.max_height - height) as i64,
         );
 
         let (_, (x1, y1)) = self.calculate_bounds();
@@ -119,12 +109,12 @@ impl Grid {
     pub fn viewport(&self) -> ((i64, i64), (i64, i64)) {
         let (width, height) = self.natural_size();
         let (dx, dy) = (
-            cmp::max(0, self.min_width - width),
-            cmp::max(0, self.min_height - height),
+            cmp::max(0, self.opts.min_width - width),
+            cmp::max(0, self.opts.min_height - height),
         );
         let (dx, dy) = (
-            cmp::min(dx, self.max_width - width) as i64,
-            cmp::min(dy, self.max_height - height) as i64,
+            cmp::min(dx, self.opts.max_width - width) as i64,
+            cmp::min(dy, self.opts.max_height - height) as i64,
         );
 
         let ((x0, y0), (x1, y1)) = self.calculate_bounds();
@@ -135,7 +125,7 @@ impl Grid {
 
     /// Return the Grid's minimum width and height in a tuple `(min_width, min_height)`.
     pub fn min_size(&self) -> (u64, u64) {
-        (self.min_width, self.min_height)
+        (self.opts.min_width, self.opts.min_height)
     }
 
     /// Return whether the Grid is empty.
@@ -239,9 +229,9 @@ impl fmt::Display for Grid {
             for x in x0..=x1 {
                 output.push(if self.is_alive(&Cell(x, y)) {
                     coords.push(Cell(x, y).to_string());
-                    self.char_alive
+                    self.opts.char_alive
                 } else {
-                    self.char_dead
+                    self.opts.char_dead
                 });
             }
             output.push('\n');
