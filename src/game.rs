@@ -32,7 +32,7 @@ pub struct Game {
 
 impl Game {
     pub fn load() -> AppResult<Game> {
-        let config = ConfigSet::load()?;
+        let config = ConfigSet::from_env()?;
         let grid = Grid::from_config(config.grid)?;
         Ok(Game::new(grid, config.game))
     }

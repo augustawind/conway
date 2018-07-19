@@ -116,8 +116,16 @@ pub struct GridConfig {
 }
 
 impl ConfigSet {
-    pub fn load() -> AppResult<ConfigSet> {
-        let matches = parse_args(env::args_os());
+    pub fn from_env() -> AppResult<ConfigSet> {
+        ConfigSet::from_args(env::args_os())
+    }
+
+    pub fn from_args<I, T>(args: I) -> AppResult<ConfigSet>
+    where
+        I: IntoIterator<Item = T>,
+        T: Into<OsString> + Clone,
+    {
+        let matches = parse_args(args);
 
         let conf = ConfigSet {
             game: GameConfig {

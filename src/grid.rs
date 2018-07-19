@@ -77,12 +77,13 @@ impl Grid {
                 .lines()
                 .filter(|line| !line.starts_with('#'));
 
+            let mut args = String::new();
             while let Some(mut line) = iter.next() {
                 line = line.trim();
                 if !line.starts_with("@@") {
                     break;
                 }
-                line = &line[2..];
+                args.push_str(&line[2..]);
             }
 
             for (y, line) in iter.enumerate() {
