@@ -98,7 +98,16 @@ impl Grid {
         Ok(Grid::new(cells, config))
     }
 
-    pub fn fixed_viewport(&self) -> ((i64, i64), (i64, i64)) {
+    pub fn viewport(&self) -> ((i64, i64), (i64, i64)) {
+        match &self.opts.view {
+            View::Fixed => self.viewport_fixed(),
+            View::Centered => self.viewport_centered(),
+            _ => unimplemented!(),
+        }
+    }
+
+    /// Return the coordinates of a "viewport" surrounding the Grid's activity.
+    pub fn viewport_fixed(&self) -> ((i64, i64), (i64, i64)) {
         let (width, height) = self.natural_size();
         let (dx, dy) = (
             cmp::max(0, self.opts.min_width - width),
@@ -113,8 +122,7 @@ impl Grid {
         ((0, 0), (x1 + dx, y1 + dy))
     }
 
-    /// Return the coordinates of a "viewport" surrounding the Grid's activity.
-    pub fn viewport(&self) -> ((i64, i64), (i64, i64)) {
+    pub fn viewport_centered(&self) -> ((i64, i64), (i64, i64)) {
         let (width, height) = self.natural_size();
         let (dx, dy) = (
             cmp::max(0, self.opts.min_width - width),
