@@ -1,7 +1,9 @@
 #[macro_use]
+extern crate clap;
+#[macro_use]
 #[cfg(test)]
 extern crate maplit;
-extern crate clap;
+
 extern crate num_integer;
 extern crate termion;
 
