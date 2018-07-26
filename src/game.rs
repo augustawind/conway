@@ -3,7 +3,6 @@ use std::thread;
 
 use config::{ConfigSet, GameConfig};
 use grid::{Cell, Grid};
-use ui::Rect;
 use AppResult;
 
 pub struct GameIter<'a>(&'a mut Game);
@@ -26,7 +25,6 @@ impl<'a> Iterator for GameIter<'a> {
 pub struct Game {
     pub grid: Grid,
     swap: Grid,
-    pub rect: Rect,
     pub opts: GameConfig,
 }
 
@@ -38,20 +36,10 @@ impl Game {
     }
 
     pub fn new(grid: Grid, opts: GameConfig) -> Game {
-        let rect = {
-            let (w, h) = grid.min_size();
-            Rect::new(0, 0, w as u16, h as u16)
-        };
-
         let mut swap = grid.clone();
         swap.clear();
 
-        Game {
-            grid,
-            swap,
-            rect,
-            opts,
-        }
+        Game { grid, swap, opts }
     }
 
     pub fn iter(&mut self) -> GameIter {
