@@ -1,16 +1,14 @@
 #[macro_use]
-extern crate clap;
-#[macro_use]
 #[cfg(test)]
 extern crate maplit;
+#[macro_use]
+extern crate clap;
 
 extern crate num_integer;
-extern crate termion;
 
 pub mod config;
 pub mod game;
 pub mod grid;
-pub mod ui;
 
 use std::error::Error;
 use std::fmt;

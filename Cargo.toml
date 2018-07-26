@@ -6,7 +6,6 @@ authors = ["Dustin Rohde <dustin.rohde@gmail.com>"]
 [dependencies]
 clap = "2.32.0"
 num-integer = "0.1.39"
-termion = "1.5.1"
 
 [dev-dependencies]
 maplit = "1.0.1"
