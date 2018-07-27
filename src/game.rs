@@ -25,7 +25,7 @@ impl<'a> Iterator for GameIter<'a> {
 pub struct Game {
     grid: Grid,
     swap: Grid,
-    pub opts: GameConfig,
+    opts: GameConfig,
 }
 
 impl Game {
