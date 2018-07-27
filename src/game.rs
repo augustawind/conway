@@ -16,14 +16,14 @@ impl<'a> Iterator for GameIter<'a> {
         }
         self.0.tick();
         thread::sleep(self.0.opts.tick_delay);
-        Some(self.0.grid.to_string())
+        Some(self.0.draw())
     }
 }
 
 /// Game holds the high-level gameplay logic.
 #[derive(Debug)]
 pub struct Game {
-    pub grid: Grid,
+    grid: Grid,
     swap: Grid,
     pub opts: GameConfig,
 }
@@ -44,6 +44,10 @@ impl Game {
 
     pub fn iter(&mut self) -> GameIter {
         GameIter(self)
+    }
+
+    pub fn draw(&self) -> String {
+        self.grid.to_string()
     }
 
     /// Return whether the Game is over. This happens with the Grid is empty.
