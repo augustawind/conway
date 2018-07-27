@@ -1,6 +1,7 @@
 use std::cmp;
 use std::collections::HashSet;
 use std::fmt;
+use std::path::Path;
 use std::str::FromStr;
 
 use num_integer::Integer;
@@ -63,6 +64,14 @@ impl Grid {
         grid.opts.max_height = cmp::max(grid.opts.max_height, grid.opts.min_height);
 
         grid
+    }
+
+    pub fn from_path<P: AsRef<Path>>(path: P) -> AppResult<Self> {
+        let config = GridConfig {
+            pattern: GridConfig::read_pattern(path)?,
+            ..Default::default()
+        };
+        Grid::from_config(config)
     }
 
     pub fn from_config(mut config: GridConfig) -> AppResult<Self> {

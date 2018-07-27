@@ -14,7 +14,9 @@ use std::error::Error;
 use std::fmt;
 use std::io;
 
+pub use config::{ConfigSet, GameConfig, GridConfig};
 pub use game::Game;
+pub use grid::Grid;
 
 pub type AppResult<T> = Result<T, AppError>;
 
@@ -24,13 +26,13 @@ pub enum AppError {
     ParseChar(std::char::ParseCharError),
     IO(io::Error),
     Msg(String),
-    WithCause(Box<AppError>, Box<Error + 'static>),
+    WithCause(Box<AppError>, Box<Error + Send + Sync + 'static>),
 }
 
 impl AppError {
     pub fn with_cause<E>(self, err: E) -> AppError
     where
-        E: Error + 'static,
+        E: Error + Send + Sync + 'static,
     {
         AppError::WithCause(Box::new(self), Box::new(err))
     }

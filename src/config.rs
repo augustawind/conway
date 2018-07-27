@@ -13,10 +13,8 @@ use grid::View;
 use AppResult;
 
 static SAMPLE_DIR: &str = "./sample_patterns";
-
 static SAMPLE_CHOICES: &[&str] = &["beacon", "glider", "blinker", "toad"];
 static VIEW_CHOICES: &[&str] = &["centered", "fixed", "follow"];
-
 const CHAR_ALIVE: char = 'x';
 const CHAR_DEAD: char = '.';
 
@@ -31,7 +29,8 @@ where
         (about: "A shell utility for running Conway's Game of Life simulations.")
         (@group source +required =>
             (@arg file: -F --file +takes_value "load a pattern from a file")
-            (@arg sample: -S --sample possible_values(SAMPLE_CHOICES) default_value[glider]
+            (@arg sample: -S --sample
+                possible_values(SAMPLE_CHOICES) default_value[glider]
                 "load a sample pattern")
         )
         (@arg raw: -r --raw "stream raw output to stdout")
@@ -71,6 +70,15 @@ pub struct GridConfig {
     pub max_height: u64,
 }
 
+impl GridConfig {
+    pub fn read_pattern<P: AsRef<Path>>(path: P) -> AppResult<String> {
+        let mut f = File::open(path)?;
+        let mut pattern = String::new();
+        f.read_to_string(&mut pattern)?;
+        Ok(pattern)
+    }
+}
+
 impl ConfigSet {
     pub fn from_env() -> AppResult<ConfigSet> {
         ConfigSet::from_args(env::args_os())
@@ -103,18 +111,14 @@ impl ConfigSet {
                 max_width: matches.value_of("max_width").unwrap().parse()?,
                 max_height: matches.value_of("max_width").unwrap().parse()?,
 
-                pattern: {
-                    let path = if let Some(file) = matches.value_of("file") {
+                pattern: GridConfig::read_pattern({
+                    if let Some(file) = matches.value_of("file") {
                         Path::new(file).to_path_buf()
                     } else {
                         let file = matches.value_of("sample").unwrap();
                         Path::new(SAMPLE_DIR).join(file)
-                    };
-                    let mut f = File::open(path)?;
-                    let mut pattern = String::new();
-                    f.read_to_string(&mut pattern)?;
-                    pattern
-                },
+                    }
+                })?,
             },
         };
 
