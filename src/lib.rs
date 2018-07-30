@@ -16,7 +16,7 @@ use std::io;
 
 pub use config::{ConfigSet, GameConfig, GridConfig};
 pub use game::Game;
-pub use grid::Grid;
+pub use grid::{Grid, View};
 
 pub type AppResult<T> = Result<T, AppError>;
 
