@@ -105,8 +105,12 @@ impl Grid {
         let (origin, Cell(x1, y1)) = grid.calculate_bounds();
         let (width, height) = ((x1 - origin.0 + 1) as u64, (y1 - origin.1 + 1) as u64);
         grid.viewport.origin = origin;
-        grid.viewport.width = width;
-        grid.viewport.height = height;
+        if grid.viewport.width == 0 {
+            grid.viewport.width = width;
+        }
+        if grid.viewport.height == 0 {
+            grid.viewport.height = height;
+        }
 
         // set min dimensions to at least the starting Grid's natural size
         grid.opts.min_width = cmp::max(grid.opts.min_width, width);
