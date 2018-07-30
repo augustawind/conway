@@ -1,6 +1,7 @@
 use std::cmp;
 use std::collections::HashSet;
 use std::fmt;
+use std::ops;
 use std::path::Path;
 use std::str::FromStr;
 
@@ -12,6 +13,28 @@ use {AppError, AppResult};
 /// A Cell is a point on the `Grid`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Cell(pub i64, pub i64);
+
+impl ops::Add for Cell {
+    type Output = Self;
+
+    fn add(self, rhs: Cell) -> Self::Output {
+        Cell(self.0 + rhs.0, self.1 + rhs.1)
+    }
+}
+
+impl ops::Sub for Cell {
+    type Output = Self;
+
+    fn sub(self, rhs: Cell) -> Self::Output {
+        Cell(self.0 - rhs.0, self.1 - rhs.1)
+    }
+}
+
+impl Default for Cell {
+    fn default() -> Self {
+        Cell(0, 0)
+    }
+}
 
 impl fmt::Display for Cell {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -40,11 +63,20 @@ impl FromStr for View {
     }
 }
 
+#[derive(Debug, Default, Clone, PartialEq, Eq)]
+struct Viewport {
+    origin: Cell,
+    scroll: Cell,
+    width: u64,
+    height: u64,
+}
+
 /// A Grid represents the physical world in which Conway's Game of Life takes place.
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub struct Grid {
     cells: HashSet<Cell>,
     opts: GridConfig,
+    viewport: Viewport,
 }
 
 impl Grid {
@@ -53,9 +85,15 @@ impl Grid {
         let mut grid = Grid {
             cells: cells.into_iter().collect(),
             opts,
+            viewport: Default::default(),
         };
 
-        let (width, height) = grid.natural_size();
+        let (origin, Cell(x1, y1)) = grid.calculate_bounds();
+        let (width, height) = ((x1 - origin.0 + 1) as u64, (y1 - origin.1 + 1) as u64);
+        grid.viewport.origin = origin;
+        grid.viewport.width = width;
+        grid.viewport.height = height;
+
         // set min dimensions to at least the starting Grid's natural size
         grid.opts.min_width = cmp::max(grid.opts.min_width, width);
         grid.opts.min_height = cmp::max(grid.opts.min_height, height);
@@ -107,7 +145,7 @@ impl Grid {
         Ok(Grid::new(cells, config))
     }
 
-    pub fn viewport(&self) -> ((i64, i64), (i64, i64)) {
+    pub fn viewport(&self) -> (Cell, Cell) {
         match &self.opts.view {
             View::Fixed => self.viewport_fixed(),
             View::Centered => self.viewport_centered(),
@@ -115,23 +153,16 @@ impl Grid {
         }
     }
 
-    /// Return the coordinates of a "viewport" surrounding the Grid's activity.
-    pub fn viewport_fixed(&self) -> ((i64, i64), (i64, i64)) {
-        let (width, height) = self.natural_size();
-        let (dx, dy) = (
-            cmp::max(0, self.opts.min_width - width),
-            cmp::max(0, self.opts.min_height - height),
+    pub fn viewport_fixed(&self) -> (Cell, Cell) {
+        let Cell(x0, y0) = self.viewport.origin + self.viewport.scroll;
+        let p1 = Cell(
+            x0 + self.viewport.width as i64,
+            y0 + self.viewport.height as i64,
         );
-        let (dx, dy) = (
-            cmp::min(dx, self.opts.max_width - width) as i64,
-            cmp::min(dy, self.opts.max_height - height) as i64,
-        );
-
-        let (_, (x1, y1)) = self.calculate_bounds();
-        ((0, 0), (x1 + dx, y1 + dy))
+        (Cell(x0, y0), p1)
     }
 
-    pub fn viewport_centered(&self) -> ((i64, i64), (i64, i64)) {
+    pub fn viewport_centered(&self) -> (Cell, Cell) {
         let (width, height) = self.natural_size();
         let (dx, dy) = (
             cmp::max(0, self.opts.min_width - width),
@@ -142,10 +173,10 @@ impl Grid {
             cmp::min(dy, self.opts.max_height - height) as i64,
         );
 
-        let ((x0, y0), (x1, y1)) = self.calculate_bounds();
+        let (Cell(x0, y0), Cell(x1, y1)) = self.calculate_bounds();
         let ((dx0, dx1), (dy0, dy1)) = (split_int(dx), split_int(dy));
 
-        ((x0 - dx0, y0 - dy0), (x1 + dx1, y1 + dy1))
+        (Cell(x0 - dx0, y0 - dy0), Cell(x1 + dx1, y1 + dy1))
     }
 
     /// Return the Grid's minimum width and height in a tuple `(min_width, min_height)`.
@@ -215,12 +246,12 @@ impl Grid {
 
     // Return the Grid's width and height as the X and Y distance between its furthest Cells.
     fn natural_size(&self) -> (u64, u64) {
-        let ((x0, y0), (x1, y1)) = self.calculate_bounds();
+        let (Cell(x0, y0), Cell(x1, y1)) = self.calculate_bounds();
         ((x1 - x0 + 1) as u64, (y1 - y0 + 1) as u64)
     }
 
     // Return the lowest and highest X and Y coordinates represented in the Grid.
-    fn calculate_bounds(&self) -> ((i64, i64), (i64, i64)) {
+    fn calculate_bounds(&self) -> (Cell, Cell) {
         let mut cells = self.cells.iter();
         if let Some(&Cell(x, y)) = cells.next() {
             let ((mut x0, mut y0), (mut x1, mut y1)) = ((x, y), (x, y));
@@ -236,9 +267,9 @@ impl Grid {
                     y1 = y;
                 }
             }
-            ((x0, y0), (x1, y1))
+            (Cell(x0, y0), Cell(x1, y1))
         } else {
-            ((0, 0), (0, 0))
+            (Default::default(), Default::default())
         }
     }
 }
@@ -246,7 +277,7 @@ impl Grid {
 /// Create a visual string representation of the Grid with each character representing a Cell.
 impl fmt::Display for Grid {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let ((x0, y0), (x1, y1)) = self.viewport();
+        let (Cell(x0, y0), Cell(x1, y1)) = self.viewport();
 
         let mut coords = Vec::new();
         let mut output = String::new();
@@ -358,7 +389,7 @@ mod test {
                     ..Default::default()
                 }
             ).viewport(),
-            ((-3, -2), (3, 4)),
+            (Cell(-3, -2), Cell(3, 4)),
             "should raise the bounds to match min_width and min_height, if smaller"
         );
         assert_eq!(
@@ -370,7 +401,7 @@ mod test {
                     ..Default::default()
                 }
             ).viewport(),
-            ((-23, 1), (64, 33)),
+            (Cell(-23, 1), Cell(64, 33)),
             "should not raise the bounds if they are larger than min_width and min_height"
         );
         assert_eq!(
@@ -382,7 +413,7 @@ mod test {
                     ..Default::default()
                 }
             ).viewport(),
-            ((-1, -1), (8, 8)),
+            (Cell(-1, -1), Cell(8, 8)),
         );
     }
 
@@ -393,14 +424,14 @@ mod test {
                 vec![Cell(2, 1), Cell(-3, 0), Cell(-2, 1), Cell(-2, 0)],
                 Default::default()
             ).calculate_bounds(),
-            ((-3, 0), (2, 1))
+            (Cell(-3, 0), Cell(2, 1))
         );
         assert_eq!(
             Grid::new(
                 vec![Cell(53, 4), Cell(2, 1), Cell(-12, 33)],
                 Default::default()
             ).calculate_bounds(),
-            ((-12, 1), (53, 33))
+            (Cell(-12, 1), Cell(53, 33))
         );
     }
 
