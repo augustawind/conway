@@ -10,6 +10,9 @@ pub use cell::Cell;
 pub use config::GridConfig;
 use {AppError, AppResult};
 
+const READ_CHAR_ALIVE: char = 'x';
+const READ_CHAR_DEAD: char = '.';
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum View {
     Centered,
@@ -106,10 +109,10 @@ impl Grid {
         {
             for (x, ch) in line.chars().enumerate() {
                 // Living Cells are added to the Grid.
-                if ch == config.char_alive {
+                if ch == READ_CHAR_ALIVE {
                     cells.push(Cell(x as i64, y as i64));
                 // Dead Cells are ignored, and any other symbol is an error.
-                } else if ch != config.char_dead {
+                } else if ch != READ_CHAR_DEAD {
                     return Err(From::from(format!("unknown character: '{}'", ch)));
                 }
             }

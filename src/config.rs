@@ -15,8 +15,8 @@ use AppResult;
 static SAMPLE_DIR: &str = "./sample_patterns";
 static SAMPLE_CHOICES: &[&str] = &["beacon", "glider", "blinker", "toad"];
 static VIEW_CHOICES: &[&str] = &["centered", "fixed", "follow"];
-pub const CHAR_ALIVE: char = 'x';
-pub const CHAR_DEAD: char = '.';
+pub const CHAR_ALIVE: char = '#';
+pub const CHAR_DEAD: char = '-';
 
 fn parse_args<'a, I, T>(args: I) -> ArgMatches<'a>
 where
@@ -35,14 +35,14 @@ where
         )
         (@arg raw: -r --raw "stream raw output to stdout")
         (@arg delay: -d --delay default_value("500") "delay (ms) between ticks")
-        (@arg live_char: -o --("live-char") +takes_value "character for live cells")
-        (@arg dead_char: -x --("dead-char") +takes_value "character for dead cells")
-        (@arg view: -v --view possible_values(VIEW_CHOICES) default_value[centered]
+        (@arg live_char: -o --("live-char") +takes_value "character used to render live cells")
+        (@arg dead_char: -x --("dead-char") +takes_value "character used to render dead cells")
+        (@arg view: -v --view possible_values(VIEW_CHOICES) default_value[fixed]
             "viewing mode")
         (@arg min_width: -W --("min-width") default_value("0") "minimum width of output")
         (@arg min_height: -H --("min-height") default_value("0") "minimum height of output")
-        (@arg width: -w --width default_value("0") "viewport width")
-        (@arg height: -h --height default_value("0") "viewport height")
+        (@arg width: -w --width default_value("20") "viewport width")
+        (@arg height: -h --height default_value("10") "viewport height")
     ).get_matches_from(args)
 }
 
