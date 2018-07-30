@@ -75,7 +75,7 @@ pub struct Game {
 impl Game {
     pub fn load() -> AppResult<Game> {
         let config = ConfigSet::from_env()?;
-        let grid = Grid::from_config(config.grid)?;
+        let grid = config.grid.pattern.parse()?;
         Ok(Game::new(grid, config.game))
     }
 
@@ -217,7 +217,7 @@ mod test {
     #[test]
     fn test_min_size() {
         let game = Game::new(
-            Grid::new(vec![Cell(0, 0), Cell(5, 5)], Default::default()),
+            Grid::new(vec![Cell(0, 0), Cell(5, 5)]),
             GameConfig {
                 min_width: 8,
                 min_height: 8,
@@ -230,7 +230,7 @@ mod test {
     #[test]
     fn test_min_size_override() {
         let game = Game::new(
-            Grid::new(vec![Cell(0, 0), Cell(5, 5)], Default::default()),
+            Grid::new(vec![Cell(0, 0), Cell(5, 5)]),
             GameConfig {
                 min_width: 3,
                 min_height: 3,
@@ -247,7 +247,7 @@ mod test {
     #[test]
     fn test_survives_blinker() {
         let game = Game::new(
-            Grid::new(vec![Cell(1, 0), Cell(1, 1), Cell(1, 2)], Default::default()),
+            Grid::new(vec![Cell(1, 0), Cell(1, 1), Cell(1, 2)]),
             Default::default(),
         );
         assert!(
@@ -279,10 +279,7 @@ mod test {
         fn test_viewport_centered_1() {
             assert_eq!(
                 Game::new(
-                    Grid::new(
-                        vec![Cell(2, 1), Cell(-3, 0), Cell(-2, 1), Cell(-2, 0)],
-                        Default::default()
-                    ),
+                    Grid::new(vec![Cell(2, 1), Cell(-3, 0), Cell(-2, 1), Cell(-2, 0)]),
                     GameConfig {
                         min_width: 7,
                         min_height: 7,
@@ -298,10 +295,7 @@ mod test {
         fn test_viewport_centered_2() {
             assert_eq!(
                 Game::new(
-                    Grid::new(
-                        vec![Cell(53, 4), Cell(2, 1), Cell(-12, 33)],
-                        Default::default()
-                    ),
+                    Grid::new(vec![Cell(53, 4), Cell(2, 1), Cell(-12, 33)]),
                     GameConfig {
                         min_width: 88,
                         ..Default::default()
@@ -316,10 +310,7 @@ mod test {
         fn test_viewport_centered_3() {
             assert_eq!(
                 Game::new(
-                    Grid::new(
-                        vec![Cell(2, 3), Cell(3, 3), Cell(5, 4), Cell(4, 2)],
-                        Default::default()
-                    ),
+                    Grid::new(vec![Cell(2, 3), Cell(3, 3), Cell(5, 4), Cell(4, 2)]),
                     GameConfig {
                         min_width: 10,
                         ..Default::default()

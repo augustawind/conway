@@ -13,7 +13,6 @@ pub const READ_CHAR_DEAD: char = '.';
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub struct Grid {
     cells: HashSet<Cell>,
-    opts: GridConfig,
 }
 
 impl Grid {
@@ -22,43 +21,15 @@ impl Grid {
      */
 
     /// Create a new Grid.
-    pub fn new(cells: Vec<Cell>, opts: GridConfig) -> Self {
+    pub fn new(cells: Vec<Cell>) -> Self {
         Grid {
             cells: cells.into_iter().collect(),
-            opts,
         }
     }
 
     pub fn from_path<P: AsRef<Path>>(path: P) -> AppResult<Self> {
-        let config = GridConfig {
-            pattern: GridConfig::read_pattern(path)?,
-            ..Default::default()
-        };
-        Grid::from_config(config)
-    }
-
-    pub fn from_config(config: GridConfig) -> AppResult<Self> {
-        let mut cells = Vec::new();
-
-        for (y, line) in config
-            .pattern
-            .trim()
-            .lines()
-            .filter(|line| !line.starts_with('#'))
-            .enumerate()
-        {
-            for (x, ch) in line.chars().enumerate() {
-                // Living Cells are added to the Grid.
-                if ch == READ_CHAR_ALIVE {
-                    cells.push(Cell(x as i64, y as i64));
-                // Dead Cells are ignored, and any other symbol is an error.
-                } else if ch != READ_CHAR_DEAD {
-                    return Err(From::from(format!("unknown character: '{}'", ch)));
-                }
-            }
-        }
-
-        Ok(Grid::new(cells, config))
+        let pattern = GridConfig::read_pattern(path)?;
+        pattern.parse()
     }
 
     /*
@@ -161,40 +132,36 @@ impl FromStr for Grid {
     type Err = AppError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Grid::from_config(GridConfig {
-            pattern: s.to_owned(),
-            ..Default::default()
-        })
+        let mut cells = Vec::new();
+
+        for (y, line) in s
+            .trim()
+            .lines()
+            .filter(|line| !line.starts_with('#'))
+            .enumerate()
+        {
+            for (x, ch) in line.chars().enumerate() {
+                // Living Cells are added to the Grid.
+                if ch == READ_CHAR_ALIVE {
+                    cells.push(Cell(x as i64, y as i64));
+                // Dead Cells are ignored, and any other symbol is an error.
+                } else if ch != READ_CHAR_DEAD {
+                    return Err(From::from(format!("unknown character: '{}'", ch)));
+                }
+            }
+        }
+
+        Ok(Grid::new(cells))
     }
 }
 
 #[cfg(test)]
 mod test {
     use super::*;
-    use config::GridConfig;
     use std::default::Default;
 
     mod constructors {
         use super::*;
-
-        #[test]
-        fn test_from_config() {
-            let pattern = vec![
-                format!("{}{}", READ_CHAR_ALIVE, READ_CHAR_ALIVE),
-                format!("{}{}{}", READ_CHAR_DEAD, READ_CHAR_DEAD, READ_CHAR_ALIVE),
-                format!("{}{}{}", READ_CHAR_DEAD, READ_CHAR_ALIVE, READ_CHAR_DEAD),
-            ].join("\n");
-            let config = GridConfig {
-                pattern,
-                ..Default::default()
-            };
-            let grid = Grid::from_config(config.clone()).unwrap();
-
-            assert_eq!(
-                grid,
-                Grid::new(vec![Cell(0, 0), Cell(1, 0), Cell(2, 1), Cell(1, 2)], config),
-            );
-        }
 
         #[test]
         fn test_from_str() {
@@ -219,7 +186,7 @@ mod test {
 
         #[test]
         fn test_active_cells() {
-            let grid = Grid::new(vec![Cell(0, 0), Cell(1, 1)], Default::default());
+            let grid = Grid::new(vec![Cell(0, 0), Cell(1, 1)]);
             assert_eq!(
                 grid.active_cells(),
                 hashset![
@@ -243,10 +210,7 @@ mod test {
 
         #[test]
         fn test_live_neighbors() {
-            let grid = Grid::new(
-                vec![Cell(-1, -1), Cell(-1, -2), Cell(0, 0), Cell(1, 0)],
-                Default::default(),
-            );
+            let grid = Grid::new(vec![Cell(-1, -1), Cell(-1, -2), Cell(0, 0), Cell(1, 0)]);
             assert_eq!(
                 grid.live_neighbors(&Cell(0, 0)),
                 2,
@@ -263,13 +227,13 @@ mod test {
         fn test_is_empty() {
             let grid: Grid = Default::default();
             assert!(grid.is_empty());
-            let grid = Grid::new(vec![Cell(0, 0)], Default::default());
+            let grid = Grid::new(vec![Cell(0, 0)]);
             assert!(!grid.is_empty());
         }
 
         #[test]
         fn test_is_alive() {
-            let grid = Grid::new(vec![Cell(-1, 4), Cell(8, 8)], Default::default());
+            let grid = Grid::new(vec![Cell(-1, 4), Cell(8, 8)]);
             assert!(&grid.is_alive(&Cell(-1, 4)));
             assert!(&grid.is_alive(&Cell(8, 8)));
             assert!(!&grid.is_alive(&Cell(8, 4)));
@@ -293,10 +257,8 @@ mod test {
         #[test]
         fn test_calculate_bounds_1() {
             assert_eq!(
-                Grid::new(
-                    vec![Cell(2, 1), Cell(-3, 0), Cell(-2, 1), Cell(-2, 0)],
-                    Default::default()
-                ).calculate_bounds(),
+                Grid::new(vec![Cell(2, 1), Cell(-3, 0), Cell(-2, 1), Cell(-2, 0)],)
+                    .calculate_bounds(),
                 (Cell(-3, 0), Cell(2, 1))
             );
         }
@@ -304,10 +266,7 @@ mod test {
         #[test]
         fn test_calculate_bounds_2() {
             assert_eq!(
-                Grid::new(
-                    vec![Cell(53, 4), Cell(2, 1), Cell(-12, 33)],
-                    Default::default()
-                ).calculate_bounds(),
+                Grid::new(vec![Cell(53, 4), Cell(2, 1), Cell(-12, 33)],).calculate_bounds(),
                 (Cell(-12, 1), Cell(53, 33))
             );
         }
