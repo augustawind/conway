@@ -9,7 +9,7 @@ use std::time::Duration;
 
 use clap::ArgMatches;
 
-use grid::{View, Viewport};
+use grid::View;
 use AppResult;
 
 static SAMPLE_DIR: &str = "./sample_patterns";
@@ -64,7 +64,8 @@ pub struct GridConfig {
     pub char_alive: char,
     pub char_dead: char,
     pub view: View,
-    pub viewport: Viewport,
+    pub width: u64,
+    pub height: u64,
     pub min_width: u64,
     pub min_height: u64,
 }
@@ -111,14 +112,12 @@ impl ConfigSet {
                     .value_of("dead_char")
                     .map_or(Ok(CHAR_DEAD), FromStr::from_str)?,
 
+                view: matches.value_of("view").unwrap().parse()?,
+
                 min_width: matches.value_of("min_width").unwrap().parse()?,
                 min_height: matches.value_of("min_width").unwrap().parse()?,
-
-                view: matches.value_of("view").unwrap().parse()?,
-                viewport: Viewport::new(
-                    matches.value_of("width").unwrap().parse()?,
-                    matches.value_of("height").unwrap().parse()?,
-                ),
+                width: matches.value_of("width").unwrap().parse()?,
+                height: matches.value_of("height").unwrap().parse()?,
             },
         };
 
@@ -144,7 +143,8 @@ impl Default for GridConfig {
             char_dead: CHAR_DEAD,
             min_width: 10,
             min_height: 10,
-            viewport: Viewport::new(10, 10),
+            width: 10,
+            height: 10,
         }
     }
 }

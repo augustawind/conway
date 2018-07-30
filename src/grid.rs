@@ -98,8 +98,8 @@ impl Grid {
     pub fn new(cells: Vec<Cell>, opts: GridConfig) -> Self {
         let mut grid = Grid {
             cells: cells.into_iter().collect(),
+            viewport: Viewport::new(opts.width, opts.height),
             opts,
-            viewport: Default::default(),
         };
 
         let (origin, Cell(x1, y1)) = grid.calculate_bounds();
