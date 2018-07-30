@@ -5,8 +5,8 @@ use std::thread;
 
 use num_integer::Integer;
 
-use config::ConfigSet;
-pub use config::GameConfig;
+use config::ConfigReader;
+pub use config::Settings;
 use grid::{Cell, Grid};
 use {AppError, AppResult};
 
@@ -68,18 +68,18 @@ impl<'a> Iterator for GameIter<'a> {
 pub struct Game {
     grid: Grid,
     swap: Grid,
-    opts: GameConfig,
+    opts: Settings,
     viewport: Viewport,
 }
 
 impl Game {
     pub fn load() -> AppResult<Game> {
-        let config = ConfigSet::from_env()?;
-        let grid = config.grid.pattern.parse()?;
-        Ok(Game::new(grid, config.game))
+        let ConfigReader { settings, pattern } = ConfigReader::from_env()?;
+        let grid = pattern.parse()?;
+        Ok(Game::new(grid, settings))
     }
 
-    pub fn new(grid: Grid, mut opts: GameConfig) -> Game {
+    pub fn new(grid: Grid, mut opts: Settings) -> Game {
         let mut swap = grid.clone();
         swap.clear();
 
@@ -218,7 +218,7 @@ mod test {
     fn test_min_size() {
         let game = Game::new(
             Grid::new(vec![Cell(0, 0), Cell(5, 5)]),
-            GameConfig {
+            Settings {
                 min_width: 8,
                 min_height: 8,
                 ..Default::default()
@@ -231,7 +231,7 @@ mod test {
     fn test_min_size_override() {
         let game = Game::new(
             Grid::new(vec![Cell(0, 0), Cell(5, 5)]),
-            GameConfig {
+            Settings {
                 min_width: 3,
                 min_height: 3,
                 ..Default::default()
@@ -280,7 +280,7 @@ mod test {
             assert_eq!(
                 Game::new(
                     Grid::new(vec![Cell(2, 1), Cell(-3, 0), Cell(-2, 1), Cell(-2, 0)]),
-                    GameConfig {
+                    Settings {
                         min_width: 7,
                         min_height: 7,
                         ..Default::default()
@@ -296,7 +296,7 @@ mod test {
             assert_eq!(
                 Game::new(
                     Grid::new(vec![Cell(53, 4), Cell(2, 1), Cell(-12, 33)]),
-                    GameConfig {
+                    Settings {
                         min_width: 88,
                         ..Default::default()
                     }
@@ -311,7 +311,7 @@ mod test {
             assert_eq!(
                 Game::new(
                     Grid::new(vec![Cell(2, 3), Cell(3, 3), Cell(5, 4), Cell(4, 2)]),
-                    GameConfig {
+                    Settings {
                         min_width: 10,
                         ..Default::default()
                     }

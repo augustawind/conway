@@ -33,7 +33,6 @@ where
                 possible_values(SAMPLE_CHOICES) default_value[glider]
                 "load a sample pattern")
         )
-        (@arg raw: -r --raw "stream raw output to stdout")
         (@arg delay: -d --delay default_value("500") "delay (ms) between ticks")
         (@arg live_char: -o --("live-char") +takes_value "character used to render live cells")
         (@arg dead_char: -x --("dead-char") +takes_value "character used to render dead cells")
@@ -47,14 +46,13 @@ where
 }
 
 #[derive(Debug)]
-pub struct ConfigSet {
-    pub grid: GridConfig,
-    pub game: GameConfig,
+pub struct ConfigReader {
+    pub settings: Settings,
+    pub pattern: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct GameConfig {
-    pub raw_mode: bool,
+pub struct Settings {
     pub tick_delay: Duration,
     pub view: View,
 
@@ -67,26 +65,20 @@ pub struct GameConfig {
     pub char_dead: char,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct GridConfig {
-    pub pattern: String,
-}
-
-impl ConfigSet {
-    pub fn from_env() -> AppResult<ConfigSet> {
-        ConfigSet::from_args(env::args_os())
+impl ConfigReader {
+    pub fn from_env() -> AppResult<ConfigReader> {
+        ConfigReader::from_args(env::args_os())
     }
 
-    pub fn from_args<I, T>(args: I) -> AppResult<ConfigSet>
+    pub fn from_args<I, T>(args: I) -> AppResult<ConfigReader>
     where
         I: IntoIterator<Item = T>,
         T: Into<OsString> + Clone,
     {
         let matches = parse_args(args);
 
-        let conf = ConfigSet {
-            game: GameConfig {
-                raw_mode: matches.is_present("raw"),
+        let conf = ConfigReader {
+            settings: Settings {
                 tick_delay: Duration::from_millis(matches.value_of("delay").unwrap().parse()?),
 
                 view: matches.value_of("view").unwrap().parse()?,
@@ -103,20 +95,18 @@ impl ConfigSet {
                     .value_of("dead_char")
                     .map_or(Ok(CHAR_DEAD), FromStr::from_str)?,
             },
-            grid: GridConfig {
-                pattern: {
-                    let path = if let Some(file) = matches.value_of("file") {
-                        Path::new(file).to_path_buf()
-                    } else {
-                        let file = matches.value_of("sample").unwrap();
-                        Path::new(SAMPLE_DIR).join(file)
-                    };
+            pattern: {
+                let path = if let Some(file) = matches.value_of("file") {
+                    Path::new(file).to_path_buf()
+                } else {
+                    let file = matches.value_of("sample").unwrap();
+                    Path::new(SAMPLE_DIR).join(file)
+                };
 
-                    let mut f = File::open(path)?;
-                    let mut pattern = String::new();
-                    f.read_to_string(&mut pattern)?;
-                    pattern
-                },
+                let mut f = File::open(path)?;
+                let mut pattern = String::new();
+                f.read_to_string(&mut pattern)?;
+                pattern
             },
         };
 
@@ -124,10 +114,9 @@ impl ConfigSet {
     }
 }
 
-impl Default for GameConfig {
+impl Default for Settings {
     fn default() -> Self {
-        GameConfig {
-            raw_mode: false,
+        Settings {
             tick_delay: Duration::from_millis(500),
             view: View::Centered,
             min_width: 10,
@@ -136,14 +125,6 @@ impl Default for GameConfig {
             height: 10,
             char_alive: CHAR_ALIVE,
             char_dead: CHAR_DEAD,
-        }
-    }
-}
-
-impl Default for GridConfig {
-    fn default() -> Self {
-        GridConfig {
-            pattern: Default::default(),
         }
     }
 }

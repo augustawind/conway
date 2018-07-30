@@ -16,7 +16,7 @@ use std::fmt;
 use std::io;
 
 pub use cell::Cell;
-pub use config::{GameConfig, GridConfig};
+pub use config::Settings;
 pub use game::{Game, View};
 pub use grid::Grid;
 

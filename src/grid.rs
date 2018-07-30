@@ -2,7 +2,6 @@ use std::collections::HashSet;
 use std::str::FromStr;
 
 pub use cell::Cell;
-pub use config::GridConfig;
 use AppError;
 
 pub const READ_CHAR_ALIVE: char = 'x';
@@ -115,9 +114,6 @@ impl Grid {
 }
 
 /// Parse a Grid from a block of structured text.
-///
-/// Since `from_str` takes no parameters, a default GridConfig is used.
-/// To use your own GridConfig, use `from_config` instead.
 impl FromStr for Grid {
     type Err = AppError;
 
