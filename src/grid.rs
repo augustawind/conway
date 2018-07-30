@@ -367,30 +367,32 @@ mod test {
             );
         }
 
-        //         #[test]
-        //         fn test_from_str() {
-        //             use config::{CHAR_ALIVE, CHAR_DEAD};
-        //             let grid: Grid = vec![
-        //                 format!("{}{}", CHAR_ALIVE, CHAR_ALIVE),
-        //                 format!("{}{}{}", CHAR_DEAD, CHAR_DEAD, CHAR_ALIVE),
-        //                 format!("{}{}{}", CHAR_DEAD, CHAR_ALIVE, CHAR_DEAD),
-        //             ].join("\n")
-        //                 .parse()
-        //                 .unwrap();
+        #[test]
+        fn test_from_str() {
+            use config::{CHAR_ALIVE, CHAR_DEAD};
+            let pattern = vec![
+                format!("{}{}", CHAR_ALIVE, CHAR_ALIVE),
+                format!("{}{}{}", CHAR_DEAD, CHAR_DEAD, CHAR_ALIVE),
+                format!("{}{}{}", CHAR_DEAD, CHAR_ALIVE, CHAR_DEAD),
+            ].join("\n");
+            let grid: Grid = pattern.parse().unwrap();
 
-        //             assert_eq!(
-        //                 grid,
-        //                 Grid::new(
-        //                     vec![Cell(0, 0), Cell(1, 0), Cell(2, 1), Cell(1, 2)],
-        //                     GridConfig {
-        //                         min_width: 3,
-        //                         min_height: 3,
-        //                         ..Default::default()
-        //                     }
-        //                 ),
-        //             );
-        //             assert!(Grid::from_str("abc\ndef").is_err())
-        //         }
+            assert_eq!(
+                grid,
+                Grid::new(
+                    vec![Cell(0, 0), Cell(1, 0), Cell(2, 1), Cell(1, 2)],
+                    GridConfig {
+                        pattern,
+                        min_width: 3,
+                        min_height: 3,
+                        max_width: 3,
+                        max_height: 3,
+                        ..Default::default()
+                    }
+                ),
+            );
+            assert!(Grid::from_str("abc\ndef").is_err())
+        }
     }
 
     mod cells {

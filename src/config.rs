@@ -15,8 +15,8 @@ use AppResult;
 static SAMPLE_DIR: &str = "./sample_patterns";
 static SAMPLE_CHOICES: &[&str] = &["beacon", "glider", "blinker", "toad"];
 static VIEW_CHOICES: &[&str] = &["centered", "fixed", "follow"];
-const CHAR_ALIVE: char = 'x';
-const CHAR_DEAD: char = '.';
+pub const CHAR_ALIVE: char = 'x';
+pub const CHAR_DEAD: char = '.';
 
 fn parse_args<'a, I, T>(args: I) -> ArgMatches<'a>
 where
