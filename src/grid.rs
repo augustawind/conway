@@ -1,62 +1,20 @@
-use std::cmp;
 use std::collections::HashSet;
 use std::fmt;
 use std::path::Path;
 use std::str::FromStr;
 
-use num_integer::Integer;
-
 pub use cell::Cell;
 pub use config::GridConfig;
 use {AppError, AppResult};
 
-const READ_CHAR_ALIVE: char = 'x';
-const READ_CHAR_DEAD: char = '.';
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum View {
-    Centered,
-    Fixed,
-    Follow,
-}
-
-impl FromStr for View {
-    type Err = AppError;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            "centered" => Ok(View::Centered),
-            "fixed" => Ok(View::Fixed),
-            "follow" => Ok(View::Follow),
-            s => Err(From::from(format!("'{}' is not a valid choice", s))),
-        }
-    }
-}
-
-#[derive(Debug, Default, Clone, PartialEq, Eq)]
-pub struct Viewport {
-    origin: Cell,
-    scroll: Cell,
-    width: u64,
-    height: u64,
-}
-
-impl Viewport {
-    pub fn new(width: u64, height: u64) -> Self {
-        Viewport {
-            width,
-            height,
-            ..Default::default()
-        }
-    }
-}
+pub const READ_CHAR_ALIVE: char = 'x';
+pub const READ_CHAR_DEAD: char = '.';
 
 /// A Grid represents the physical world in which Conway's Game of Life takes place.
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub struct Grid {
     cells: HashSet<Cell>,
     opts: GridConfig,
-    pub viewport: Viewport,
 }
 
 impl Grid {
@@ -66,27 +24,10 @@ impl Grid {
 
     /// Create a new Grid.
     pub fn new(cells: Vec<Cell>, opts: GridConfig) -> Self {
-        let mut grid = Grid {
+        Grid {
             cells: cells.into_iter().collect(),
-            viewport: Viewport::new(opts.width, opts.height),
             opts,
-        };
-
-        let (origin, Cell(x1, y1)) = grid.calculate_bounds();
-        let (width, height) = ((x1 - origin.0 + 1) as u64, (y1 - origin.1 + 1) as u64);
-        grid.viewport.origin = origin;
-        if grid.viewport.width == 0 {
-            grid.viewport.width = width;
         }
-        if grid.viewport.height == 0 {
-            grid.viewport.height = height;
-        }
-
-        // set min dimensions to at least the starting Grid's natural size
-        grid.opts.min_width = cmp::max(grid.opts.min_width, width);
-        grid.opts.min_height = cmp::max(grid.opts.min_height, height);
-
-        grid
     }
 
     pub fn from_path<P: AsRef<Path>>(path: P) -> AppResult<Self> {
@@ -186,55 +127,11 @@ impl Grid {
     }
 
     /*
-     * Viewport
-     */
-
-    pub fn viewport(&self) -> (Cell, Cell) {
-        match &self.opts.view {
-            View::Fixed => self.viewport_fixed(),
-            View::Centered => self.viewport_centered(),
-            _ => unimplemented!(),
-        }
-    }
-
-    pub fn viewport_fixed(&self) -> (Cell, Cell) {
-        let Cell(x0, y0) = self.viewport.origin + self.viewport.scroll;
-        let p1 = Cell(
-            x0 + self.viewport.width as i64,
-            y0 + self.viewport.height as i64,
-        );
-        (Cell(x0, y0), p1)
-    }
-
-    pub fn viewport_centered(&self) -> (Cell, Cell) {
-        let (width, height) = self.natural_size();
-        let (dx, dy) = (
-            cmp::max(0, self.opts.min_width - width) as i64,
-            cmp::max(0, self.opts.min_height - height) as i64,
-        );
-
-        let (Cell(x0, y0), Cell(x1, y1)) = self.calculate_bounds();
-        let ((dx0, dx1), (dy0, dy1)) = (split_int(dx), split_int(dy));
-
-        (Cell(x0 - dx0, y0 - dy0), Cell(x1 + dx1, y1 + dy1))
-    }
-
-    pub fn scroll(&mut self, dx: i64, dy: i64) {
-        self.viewport.scroll = self.viewport.scroll - Cell(dx, dy);
-    }
-
-    /*
      * Geometry
      */
 
-    // Return the Grid's width and height as the X and Y distance between its furthest Cells.
-    fn natural_size(&self) -> (u64, u64) {
-        let (Cell(x0, y0), Cell(x1, y1)) = self.calculate_bounds();
-        ((x1 - x0 + 1) as u64, (y1 - y0 + 1) as u64)
-    }
-
     // Return the lowest and highest X and Y coordinates represented in the Grid.
-    fn calculate_bounds(&self) -> (Cell, Cell) {
+    pub fn calculate_bounds(&self) -> (Cell, Cell) {
         let mut cells = self.cells.iter();
         if let Some(&Cell(x, y)) = cells.next() {
             let ((mut x0, mut y0), (mut x1, mut y1)) = ((x, y), (x, y));
@@ -255,13 +152,12 @@ impl Grid {
             (Default::default(), Default::default())
         }
     }
-}
 
-/// Create a visual string representation of the Grid with each character representing a Cell.
-impl fmt::Display for Grid {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let (Cell(x0, y0), Cell(x1, y1)) = self.viewport();
+    /*
+     * Display
+     */
 
+    pub fn draw(&self, (Cell(x0, y0), Cell(x1, y1)): (Cell, Cell)) -> String {
         let mut coords = Vec::new();
         let mut output = String::new();
         for y in y0..=y1 {
@@ -275,8 +171,14 @@ impl fmt::Display for Grid {
             }
             output.push('\n');
         }
+        output
+    }
+}
 
-        write!(f, "{}", output)
+/// Create a visual string representation of the Grid with each character representing a Cell.
+impl fmt::Display for Grid {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.draw(self.calculate_bounds()))
     }
 }
 
@@ -295,12 +197,6 @@ impl FromStr for Grid {
     }
 }
 
-fn split_int<T: Integer + Copy>(n: T) -> (T, T) {
-    let two = T::one() + T::one();
-    let (quotient, remainder) = n.div_rem(&two);
-    (quotient, quotient + remainder)
-}
-
 #[cfg(test)]
 mod test {
     use super::*;
@@ -311,52 +207,15 @@ mod test {
         use super::*;
 
         #[test]
-        fn test_grid_min_size() {
-            let grid = Grid::new(
-                vec![Cell(0, 0), Cell(5, 5)],
-                GridConfig {
-                    min_width: 8,
-                    min_height: 8,
-                    ..Default::default()
-                },
-            );
-            assert_eq!((grid.opts.min_width, grid.opts.min_height), (8, 8),);
-        }
-
-        #[test]
-        fn test_grid_min_size_override() {
-            let grid = Grid::new(
-                vec![Cell(0, 0), Cell(5, 5)],
-                GridConfig {
-                    min_width: 3,
-                    min_height: 3,
-                    ..Default::default()
-                },
-            );
-            assert_eq!(
-                (grid.opts.min_width, grid.opts.min_height),
-                (6, 6),
-                "natural size should override given min size if natural > given"
-            );
-        }
-
-        #[test]
         fn test_from_config() {
-            let (char_alive, char_dead) = ('!', '_');
             let pattern = vec![
-                format!("{}{}", char_alive, char_alive),
-                format!("{}{}{}", char_dead, char_dead, char_alive),
-                format!("{}{}{}", char_dead, char_alive, char_dead),
+                format!("{}{}", READ_CHAR_ALIVE, READ_CHAR_ALIVE),
+                format!("{}{}{}", READ_CHAR_DEAD, READ_CHAR_DEAD, READ_CHAR_ALIVE),
+                format!("{}{}{}", READ_CHAR_DEAD, READ_CHAR_ALIVE, READ_CHAR_DEAD),
             ].join("\n");
             let config = GridConfig {
                 pattern,
-                char_alive,
-                char_dead,
-                view: View::Centered,
-                min_width: 5,
-                min_height: 5,
-                width: 8,
-                height: 8,
+                ..Default::default()
             };
             let grid = Grid::from_config(config.clone()).unwrap();
 
@@ -368,11 +227,10 @@ mod test {
 
         #[test]
         fn test_from_str() {
-            use config::{CHAR_ALIVE, CHAR_DEAD};
             let grid: Grid = vec![
-                format!("{}{}", CHAR_ALIVE, CHAR_ALIVE),
-                format!("{}{}{}", CHAR_DEAD, CHAR_DEAD, CHAR_ALIVE),
-                format!("{}{}{}", CHAR_DEAD, CHAR_ALIVE, CHAR_DEAD),
+                format!("{}{}", READ_CHAR_ALIVE, READ_CHAR_ALIVE),
+                format!("{}{}{}", READ_CHAR_DEAD, READ_CHAR_DEAD, READ_CHAR_ALIVE),
+                format!("{}{}{}", READ_CHAR_DEAD, READ_CHAR_ALIVE, READ_CHAR_DEAD),
             ].join("\n")
                 .parse()
                 .unwrap();
@@ -458,55 +316,6 @@ mod test {
         }
     }
 
-    mod viewport {
-        use super::*;
-
-        #[test]
-        fn test_viewport_centered_1() {
-            assert_eq!(
-                Grid::new(
-                    vec![Cell(2, 1), Cell(-3, 0), Cell(-2, 1), Cell(-2, 0)],
-                    GridConfig {
-                        min_width: 7,
-                        min_height: 7,
-                        ..Default::default()
-                    }
-                ).viewport_centered(),
-                (Cell(-3, -2), Cell(3, 4)),
-                "should raise the bounds to match min_width and min_height, if smaller"
-            );
-        }
-
-        #[test]
-        fn test_viewport_centered_2() {
-            assert_eq!(
-                Grid::new(
-                    vec![Cell(53, 4), Cell(2, 1), Cell(-12, 33)],
-                    GridConfig {
-                        min_width: 88,
-                        ..Default::default()
-                    }
-                ).viewport_centered(),
-                (Cell(-23, 1), Cell(64, 33)),
-                "should not raise the bounds if they are larger than min_width and min_height"
-            );
-        }
-
-        #[test]
-        fn test_viewport_centered_3() {
-            assert_eq!(
-                Grid::new(
-                    vec![Cell(2, 3), Cell(3, 3), Cell(5, 4), Cell(4, 2)],
-                    GridConfig {
-                        min_width: 10,
-                        ..Default::default()
-                    }
-                ).viewport_centered(),
-                (Cell(-1, -1), Cell(8, 8)),
-            );
-        }
-    }
-
     mod geometry {
         use super::*;
 
@@ -531,15 +340,5 @@ mod test {
                 (Cell(-12, 1), Cell(53, 33))
             );
         }
-    }
-
-    #[test]
-    fn test_split_int() {
-        assert_eq!(split_int(30), (15, 15));
-        assert_eq!(split_int(31), (15, 16));
-        assert_eq!(split_int(32), (16, 16));
-        assert_eq!(split_int(0), (0, 0));
-        assert_eq!(split_int(1), (0, 1));
-        assert_eq!(split_int(2), (1, 1));
     }
 }

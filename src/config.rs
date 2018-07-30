@@ -9,7 +9,7 @@ use std::time::Duration;
 
 use clap::ArgMatches;
 
-use grid::View;
+use game::View;
 use AppResult;
 
 static SAMPLE_DIR: &str = "./sample_patterns";
@@ -56,6 +56,11 @@ pub struct ConfigSet {
 pub struct GameConfig {
     pub raw_mode: bool,
     pub tick_delay: Duration,
+    pub view: View,
+    pub width: u64,
+    pub height: u64,
+    pub min_width: u64,
+    pub min_height: u64,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -63,11 +68,6 @@ pub struct GridConfig {
     pub pattern: String,
     pub char_alive: char,
     pub char_dead: char,
-    pub view: View,
-    pub width: u64,
-    pub height: u64,
-    pub min_width: u64,
-    pub min_height: u64,
 }
 
 impl GridConfig {
@@ -95,6 +95,13 @@ impl ConfigSet {
             game: GameConfig {
                 raw_mode: matches.is_present("raw"),
                 tick_delay: Duration::from_millis(matches.value_of("delay").unwrap().parse()?),
+
+                view: matches.value_of("view").unwrap().parse()?,
+
+                min_width: matches.value_of("min_width").unwrap().parse()?,
+                min_height: matches.value_of("min_width").unwrap().parse()?,
+                width: matches.value_of("width").unwrap().parse()?,
+                height: matches.value_of("height").unwrap().parse()?,
             },
             grid: GridConfig {
                 pattern: GridConfig::read_pattern({
@@ -111,13 +118,6 @@ impl ConfigSet {
                 char_dead: matches
                     .value_of("dead_char")
                     .map_or(Ok(CHAR_DEAD), FromStr::from_str)?,
-
-                view: matches.value_of("view").unwrap().parse()?,
-
-                min_width: matches.value_of("min_width").unwrap().parse()?,
-                min_height: matches.value_of("min_width").unwrap().parse()?,
-                width: matches.value_of("width").unwrap().parse()?,
-                height: matches.value_of("height").unwrap().parse()?,
             },
         };
 
@@ -130,6 +130,11 @@ impl Default for GameConfig {
         GameConfig {
             raw_mode: false,
             tick_delay: Duration::from_millis(500),
+            view: View::Centered,
+            min_width: 10,
+            min_height: 10,
+            width: 10,
+            height: 10,
         }
     }
 }
@@ -138,13 +143,8 @@ impl Default for GridConfig {
     fn default() -> Self {
         GridConfig {
             pattern: Default::default(),
-            view: View::Centered,
             char_alive: CHAR_ALIVE,
             char_dead: CHAR_DEAD,
-            min_width: 10,
-            min_height: 10,
-            width: 10,
-            height: 10,
         }
     }
 }
