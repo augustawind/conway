@@ -1,4 +1,3 @@
-use std::cmp;
 use std::mem;
 use std::str::FromStr;
 use std::thread;
@@ -79,16 +78,15 @@ impl Game {
         Ok(Game::new(grid, settings))
     }
 
-    pub fn new(grid: Grid, mut opts: Settings) -> Game {
+    pub fn new(grid: Grid, opts: Settings) -> Game {
         let mut swap = grid.clone();
         swap.clear();
 
         let (origin, Cell(x1, y1)) = grid.calculate_bounds();
         let (width, height) = ((x1 - origin.0 + 1) as u64, (y1 - origin.1 + 1) as u64);
 
+        // FIXME: implement Option instead of relying on 0
         // set min dimensions to at least the starting Grid's natural size
-        opts.min_width = cmp::max(opts.min_width, width);
-        opts.min_height = cmp::max(opts.min_height, height);
         let viewport = Viewport {
             origin,
             width: if opts.width == 0 {
@@ -158,14 +156,14 @@ impl Game {
 
     pub fn viewport_centered(&self) -> (Cell, Cell) {
         let (Cell(x0, y0), Cell(x1, y1)) = self.grid.calculate_bounds();
-        let (width, height) = ((x1 - x0 + 1) as u64, (y1 - y0 + 1) as u64);
+        let (width, height) = (x1 - x0 + 1, y1 - y0 + 1);
+
         let (dx, dy) = (
-            cmp::max(0, self.opts.min_width - width) as i64,
-            cmp::max(0, self.opts.min_height - height) as i64,
+            self.viewport.width as i64 - width,
+            self.viewport.height as i64 - height,
         );
 
         let ((dx0, dx1), (dy0, dy1)) = (split_int(dx), split_int(dy));
-
         (Cell(x0 - dx0, y0 - dy0), Cell(x1 + dx1, y1 + dy1))
     }
 
@@ -214,35 +212,36 @@ fn split_int<T: Integer + Copy>(n: T) -> (T, T) {
 mod test {
     use super::*;
 
-    #[test]
-    fn test_min_size() {
-        let game = Game::new(
-            Grid::new(vec![Cell(0, 0), Cell(5, 5)]),
-            Settings {
-                min_width: 8,
-                min_height: 8,
-                ..Default::default()
-            },
-        );
-        assert_eq!((game.opts.min_width, game.opts.min_height), (8, 8),);
-    }
+    // FIXME: implement Option for width/height to achieve this
+    // #[test]
+    // fn test_min_size() {
+    //     let game = Game::new(
+    //         Grid::new(vec![Cell(0, 0), Cell(5, 5)]),
+    //         Settings {
+    //             min_width: 8,
+    //             min_height: 8,
+    //             ..Default::default()
+    //         },
+    //     );
+    //     assert_eq!((game.opts.min_width, game.opts.min_height), (8, 8),);
+    // }
 
-    #[test]
-    fn test_min_size_override() {
-        let game = Game::new(
-            Grid::new(vec![Cell(0, 0), Cell(5, 5)]),
-            Settings {
-                min_width: 3,
-                min_height: 3,
-                ..Default::default()
-            },
-        );
-        assert_eq!(
-            (game.opts.min_width, game.opts.min_height),
-            (6, 6),
-            "natural size should override given min size if natural > given"
-        );
-    }
+    // #[test]
+    // fn test_min_size_override() {
+    //     let game = Game::new(
+    //         Grid::new(vec![Cell(0, 0), Cell(5, 5)]),
+    //         Settings {
+    //             min_width: 3,
+    //             min_height: 3,
+    //             ..Default::default()
+    //         },
+    //     );
+    //     assert_eq!(
+    //         (game.opts.min_width, game.opts.min_height),
+    //         (6, 6),
+    //         "natural size should override given min size if natural > given"
+    //     );
+    // }
 
     #[test]
     fn test_survives_blinker() {
@@ -281,13 +280,13 @@ mod test {
                 Game::new(
                     Grid::new(vec![Cell(2, 1), Cell(-3, 0), Cell(-2, 1), Cell(-2, 0)]),
                     Settings {
-                        min_width: 7,
-                        min_height: 7,
+                        width: 7,
+                        height: 7,
                         ..Default::default()
                     }
                 ).viewport_centered(),
                 (Cell(-3, -2), Cell(3, 4)),
-                "should raise the bounds to match min_width and min_height, if smaller"
+                "should pad content to fit width/height"
             );
         }
 
@@ -295,14 +294,19 @@ mod test {
         fn test_viewport_centered_2() {
             assert_eq!(
                 Game::new(
+                    // natural size = 66 x 33
                     Grid::new(vec![Cell(53, 4), Cell(2, 1), Cell(-12, 33)]),
                     Settings {
-                        min_width: 88,
+                        // adjust width: 88 - 66 = +22 / 2 => x0 - 11, x1 + 11
+                        width: 88,
+                        // adjust height: 12 - 33 = -21 / 2 => y0 + 10, y1 - 11
+                        height: 12,
                         ..Default::default()
                     }
                 ).viewport_centered(),
-                (Cell(-23, 1), Cell(64, 33)),
-                "should not raise the bounds if they are larger than min_width and min_height"
+                // x0[-12] - 11 = -23 // x1[53] + 11 = 64
+                // y0[1] + 10 = 11 // y1[33] - 11 = 22
+                (Cell(-23, 11), Cell(64, 22))
             );
         }
 
@@ -310,13 +314,19 @@ mod test {
         fn test_viewport_centered_3() {
             assert_eq!(
                 Game::new(
+                    // natural size = 4 x 3
                     Grid::new(vec![Cell(2, 3), Cell(3, 3), Cell(5, 4), Cell(4, 2)]),
                     Settings {
-                        min_width: 10,
+                        // adjust width: 10 - 4 = +6 / 2 => x0 - 3, x1 + 3
+                        width: 10,
+                        // adjust height: 3 - 3 = 0 => N/A
+                        height: 3,
                         ..Default::default()
                     }
                 ).viewport_centered(),
-                (Cell(-1, -1), Cell(8, 8)),
+                // x0[2] - 3 = -1 // x1[5] + 3 = 8
+                // y0[2] + 0 = 2 // y1[4] + 0 = 4
+                (Cell(-1, 2), Cell(8, 4)),
             );
         }
     }

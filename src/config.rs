@@ -38,8 +38,6 @@ where
         (@arg dead_char: -x --("dead-char") +takes_value "character used to render dead cells")
         (@arg view: -v --view possible_values(VIEW_CHOICES) default_value[fixed]
             "viewing mode")
-        (@arg min_width: -W --("min-width") default_value("0") "minimum width of output")
-        (@arg min_height: -H --("min-height") default_value("0") "minimum height of output")
         (@arg width: -w --width default_value("20") "viewport width")
         (@arg height: -h --height default_value("10") "viewport height")
     ).get_matches_from(args)
@@ -58,8 +56,6 @@ pub struct Settings {
 
     pub width: u64,
     pub height: u64,
-    pub min_width: u64,
-    pub min_height: u64,
 
     pub char_alive: char,
     pub char_dead: char,
@@ -83,8 +79,6 @@ impl ConfigReader {
 
                 view: matches.value_of("view").unwrap().parse()?,
 
-                min_width: matches.value_of("min_width").unwrap().parse()?,
-                min_height: matches.value_of("min_width").unwrap().parse()?,
                 width: matches.value_of("width").unwrap().parse()?,
                 height: matches.value_of("height").unwrap().parse()?,
 
@@ -119,8 +113,6 @@ impl Default for Settings {
         Settings {
             tick_delay: Duration::from_millis(500),
             view: View::Centered,
-            min_width: 10,
-            min_height: 10,
             width: 10,
             height: 10,
             char_alive: CHAR_ALIVE,
