@@ -56,7 +56,7 @@ impl Game {
         self.grid.is_empty()
     }
 
-    /// Progress the Game of Life forward.
+    /// Execute the next turn in the Game of Life.
     ///
     /// `tick` applies the rules of game to each individual Cell, killing some and reviving others.
     pub fn tick(&mut self) {
