@@ -57,7 +57,7 @@ impl<'a> Iterator for GameIter<'a> {
             return None;
         }
         self.0.tick();
-        thread::sleep(self.0.opts.tick_delay);
+        thread::sleep(self.0.opts.delay);
         Some(self.0.draw())
     }
 }

@@ -51,7 +51,7 @@ pub struct ConfigReader {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Settings {
-    pub tick_delay: Duration,
+    pub delay: Duration,
     pub view: View,
 
     pub width: Option<u64>,
@@ -75,7 +75,7 @@ impl ConfigReader {
 
         let conf = ConfigReader {
             settings: Settings {
-                tick_delay: Duration::from_millis(matches.value_of("delay").unwrap().parse()?),
+                delay: Duration::from_millis(matches.value_of("delay").unwrap().parse()?),
 
                 view: matches.value_of("view").unwrap().parse()?,
 
@@ -111,7 +111,7 @@ impl ConfigReader {
 impl Default for Settings {
     fn default() -> Self {
         Settings {
-            tick_delay: Duration::from_millis(500),
+            delay: Duration::from_millis(500),
             view: View::Centered,
             width: Some(10),
             height: Some(10),
