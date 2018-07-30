@@ -1,5 +1,4 @@
 use std::collections::HashSet;
-use std::fmt;
 use std::path::Path;
 use std::str::FromStr;
 
@@ -151,34 +150,6 @@ impl Grid {
         } else {
             (Default::default(), Default::default())
         }
-    }
-
-    /*
-     * Display
-     */
-
-    pub fn draw(&self, (Cell(x0, y0), Cell(x1, y1)): (Cell, Cell)) -> String {
-        let mut coords = Vec::new();
-        let mut output = String::new();
-        for y in y0..=y1 {
-            for x in x0..=x1 {
-                output.push(if self.is_alive(&Cell(x, y)) {
-                    coords.push(Cell(x, y).to_string());
-                    self.opts.char_alive
-                } else {
-                    self.opts.char_dead
-                });
-            }
-            output.push('\n');
-        }
-        output
-    }
-}
-
-/// Create a visual string representation of the Grid with each character representing a Cell.
-impl fmt::Display for Grid {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.draw(self.calculate_bounds()))
     }
 }
 

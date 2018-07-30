@@ -57,17 +57,19 @@ pub struct GameConfig {
     pub raw_mode: bool,
     pub tick_delay: Duration,
     pub view: View,
+
     pub width: u64,
     pub height: u64,
     pub min_width: u64,
     pub min_height: u64,
+
+    pub char_alive: char,
+    pub char_dead: char,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct GridConfig {
     pub pattern: String,
-    pub char_alive: char,
-    pub char_dead: char,
 }
 
 impl GridConfig {
@@ -102,6 +104,13 @@ impl ConfigSet {
                 min_height: matches.value_of("min_width").unwrap().parse()?,
                 width: matches.value_of("width").unwrap().parse()?,
                 height: matches.value_of("height").unwrap().parse()?,
+
+                char_alive: matches
+                    .value_of("live_char")
+                    .map_or(Ok(CHAR_ALIVE), FromStr::from_str)?,
+                char_dead: matches
+                    .value_of("dead_char")
+                    .map_or(Ok(CHAR_DEAD), FromStr::from_str)?,
             },
             grid: GridConfig {
                 pattern: GridConfig::read_pattern({
@@ -112,12 +121,6 @@ impl ConfigSet {
                         Path::new(SAMPLE_DIR).join(file)
                     }
                 })?,
-                char_alive: matches
-                    .value_of("live_char")
-                    .map_or(Ok(CHAR_ALIVE), FromStr::from_str)?,
-                char_dead: matches
-                    .value_of("dead_char")
-                    .map_or(Ok(CHAR_DEAD), FromStr::from_str)?,
             },
         };
 
@@ -135,6 +138,8 @@ impl Default for GameConfig {
             min_height: 10,
             width: 10,
             height: 10,
+            char_alive: CHAR_ALIVE,
+            char_dead: CHAR_DEAD,
         }
     }
 }
@@ -143,8 +148,6 @@ impl Default for GridConfig {
     fn default() -> Self {
         GridConfig {
             pattern: Default::default(),
-            char_alive: CHAR_ALIVE,
-            char_dead: CHAR_DEAD,
         }
     }
 }

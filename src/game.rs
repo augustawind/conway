@@ -117,7 +117,22 @@ impl Game {
     }
 
     pub fn draw(&self) -> String {
-        self.grid.draw(self.viewport())
+        self.draw_viewport(self.viewport())
+    }
+
+    fn draw_viewport(&self, (Cell(x0, y0), Cell(x1, y1)): (Cell, Cell)) -> String {
+        let mut output = String::new();
+        for y in y0..=y1 {
+            for x in x0..=x1 {
+                output.push(if self.grid.is_alive(&Cell(x, y)) {
+                    self.opts.char_alive
+                } else {
+                    self.opts.char_dead
+                });
+            }
+            output.push('\n');
+        }
+        output
     }
 
     pub fn scroll(&mut self, dx: i64, dy: i64) {
