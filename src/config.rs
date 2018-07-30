@@ -38,8 +38,8 @@ where
         (@arg dead_char: -x --("dead-char") +takes_value "character used to render dead cells")
         (@arg view: -v --view possible_values(VIEW_CHOICES) default_value[fixed]
             "viewing mode")
-        (@arg width: -w --width "viewport width")
-        (@arg height: -h --height "viewport height")
+        (@arg width: -w --width +takes_value "viewport width")
+        (@arg height: -h --height +takes_value "viewport height")
     ).get_matches_from(args)
 }
 
