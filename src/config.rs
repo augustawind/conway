@@ -32,20 +32,35 @@ where
         (author: "Dustin Rohde <dustin.rohde@gmail.com>")
         (about: "A shell utility for running Conway's Game of Life simulations.")
         (@group source +required =>
-            (@arg file: -F --file +takes_value "load a pattern from a file")
-            (@arg sample: -S --sample
-                possible_values(SAMPLE_CHOICES) default_value[glider]
+            (@arg file: -F --file display_order(1)
+                +takes_value
+                "load a pattern from a file")
+            (@arg sample: -S --sample display_order(1)
+                default_value[glider]
+                possible_values(SAMPLE_CHOICES)
                 "load a sample pattern")
         )
-        (@arg delay: -d --delay default_value("500") "delay (ms) between ticks")
-        (@arg live_char: -o --("live-char") default_value(*DEFAULT_CHAR_ALIVE)
-            "character used to render live cells [default: ]")
-        (@arg dead_char: -x --("dead-char") default_value(*DEFAULT_CHAR_DEAD)
-            "character used to render dead cells")
-        (@arg view: -v --view possible_values(VIEW_CHOICES) default_value[fixed]
+        (@arg delay: -d --delay display_order(2)
+            default_value("500")
+            "delay (ms) between ticks")
+        (@arg view: -v --view display_order(3)
+            default_value[fixed]
+            possible_values(VIEW_CHOICES)
             "viewing mode")
-        (@arg width: -w --width +takes_value "viewport width [default: auto]")
-        (@arg height: -h --height +takes_value "viewport height [default: auto]")
+        (@arg width: -w --width display_order(4)
+            +takes_value
+            "viewport width [default: auto]")
+        (@arg height: -h --height display_order(4)
+            +takes_value
+            "viewport height [default: auto]")
+        (@arg live_char: -o --("live-char") display_order(5)
+            default_value(*DEFAULT_CHAR_ALIVE)
+            env[CONWAY_LIVE_CHAR]
+            "character used to render live cells")
+        (@arg dead_char: -x --("dead-char") display_order(5)
+            default_value(*DEFAULT_CHAR_DEAD)
+            env[CONWAY_DEAD_CHAR]
+            "character used to render dead cells")
     ).get_matches_from(args)
 }
 
