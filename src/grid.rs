@@ -64,11 +64,21 @@ impl FromStr for View {
 }
 
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
-struct Viewport {
+pub struct Viewport {
     origin: Cell,
     scroll: Cell,
     width: u64,
     height: u64,
+}
+
+impl Viewport {
+    pub fn new(width: u64, height: u64) -> Self {
+        Viewport {
+            width,
+            height,
+            ..Default::default()
+        }
+    }
 }
 
 /// A Grid represents the physical world in which Conway's Game of Life takes place.
@@ -101,9 +111,6 @@ impl Grid {
         // set min dimensions to at least the starting Grid's natural size
         grid.opts.min_width = cmp::max(grid.opts.min_width, width);
         grid.opts.min_height = cmp::max(grid.opts.min_height, height);
-        // set max dimensions to at least the Grid's min dimensions
-        grid.opts.max_width = cmp::max(grid.opts.max_width, grid.opts.min_width);
-        grid.opts.max_height = cmp::max(grid.opts.max_height, grid.opts.min_height);
 
         grid
     }
@@ -228,18 +235,18 @@ impl Grid {
     pub fn viewport_centered(&self) -> (Cell, Cell) {
         let (width, height) = self.natural_size();
         let (dx, dy) = (
-            cmp::max(0, self.opts.min_width - width),
-            cmp::max(0, self.opts.min_height - height),
-        );
-        let (dx, dy) = (
-            cmp::min(dx, self.opts.max_width - width) as i64,
-            cmp::min(dy, self.opts.max_height - height) as i64,
+            cmp::max(0, self.opts.min_width - width) as i64,
+            cmp::max(0, self.opts.min_height - height) as i64,
         );
 
         let (Cell(x0, y0), Cell(x1, y1)) = self.calculate_bounds();
         let ((dx0, dx1), (dy0, dy1)) = (split_int(dx), split_int(dy));
 
         (Cell(x0 - dx0, y0 - dy0), Cell(x1 + dx1, y1 + dy1))
+    }
+
+    pub fn scroll(&mut self, dx: i64, dy: i64) {
+        self.viewport.scroll = self.viewport.scroll + Cell(dx, dy);
     }
 
     /*
@@ -371,11 +378,10 @@ mod test {
                 pattern,
                 char_alive,
                 char_dead,
-                view: View::Centered,
                 min_width: 5,
                 min_height: 5,
-                max_width: 12,
-                max_height: 12,
+                view: View::Centered,
+                viewport: Viewport::new(8, 8),
             };
             let grid = Grid::from_config(config.clone()).unwrap();
 
@@ -503,7 +509,6 @@ mod test {
                     vec![Cell(53, 4), Cell(2, 1), Cell(-12, 33)],
                     GridConfig {
                         min_width: 88,
-                        max_width: 32,
                         ..Default::default()
                     }
                 ).viewport_centered(),
@@ -519,7 +524,6 @@ mod test {
                     vec![Cell(2, 3), Cell(3, 3), Cell(5, 4), Cell(4, 2)],
                     GridConfig {
                         min_width: 10,
-                        max_width: 10,
                         ..Default::default()
                     }
                 ).viewport_centered(),

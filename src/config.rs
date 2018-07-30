@@ -9,7 +9,7 @@ use std::time::Duration;
 
 use clap::ArgMatches;
 
-use grid::View;
+use grid::{View, Viewport};
 use AppResult;
 
 static SAMPLE_DIR: &str = "./sample_patterns";
@@ -35,14 +35,14 @@ where
         )
         (@arg raw: -r --raw "stream raw output to stdout")
         (@arg delay: -d --delay default_value("500") "delay (ms) between ticks")
-        (@arg view: -v --view possible_values(VIEW_CHOICES) default_value[centered]
-            "viewing mode")
         (@arg live_char: -o --("live-char") +takes_value "character for live cells")
         (@arg dead_char: -x --("dead-char") +takes_value "character for dead cells")
-        (@arg min_width: -w --("min-width") default_value("0") "minimum width of output")
-        (@arg min_height: -h --("min-height") default_value("0") "minimum height of output")
-        (@arg max_width: -W --("max-width")  default_value("0") "maximum width of output")
-        (@arg max_height: -H --("max-height") default_value("0") "maximum height of output")
+        (@arg view: -v --view possible_values(VIEW_CHOICES) default_value[centered]
+            "viewing mode")
+        (@arg min_width: -W --("min-width") default_value("0") "minimum width of output")
+        (@arg min_height: -H --("min-height") default_value("0") "minimum height of output")
+        (@arg width: -w --width default_value("0") "viewport width")
+        (@arg height: -h --height default_value("0") "viewport height")
     ).get_matches_from(args)
 }
 
@@ -61,13 +61,12 @@ pub struct GameConfig {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct GridConfig {
     pub pattern: String,
-    pub view: View,
     pub char_alive: char,
     pub char_dead: char,
+    pub view: View,
+    pub viewport: Viewport,
     pub min_width: u64,
     pub min_height: u64,
-    pub max_width: u64,
-    pub max_height: u64,
 }
 
 impl GridConfig {
@@ -97,8 +96,14 @@ impl ConfigSet {
                 tick_delay: Duration::from_millis(matches.value_of("delay").unwrap().parse()?),
             },
             grid: GridConfig {
-                view: matches.value_of("view").unwrap().parse()?,
-
+                pattern: GridConfig::read_pattern({
+                    if let Some(file) = matches.value_of("file") {
+                        Path::new(file).to_path_buf()
+                    } else {
+                        let file = matches.value_of("sample").unwrap();
+                        Path::new(SAMPLE_DIR).join(file)
+                    }
+                })?,
                 char_alive: matches
                     .value_of("live_char")
                     .map_or(Ok(CHAR_ALIVE), FromStr::from_str)?,
@@ -108,17 +113,12 @@ impl ConfigSet {
 
                 min_width: matches.value_of("min_width").unwrap().parse()?,
                 min_height: matches.value_of("min_width").unwrap().parse()?,
-                max_width: matches.value_of("max_width").unwrap().parse()?,
-                max_height: matches.value_of("max_width").unwrap().parse()?,
 
-                pattern: GridConfig::read_pattern({
-                    if let Some(file) = matches.value_of("file") {
-                        Path::new(file).to_path_buf()
-                    } else {
-                        let file = matches.value_of("sample").unwrap();
-                        Path::new(SAMPLE_DIR).join(file)
-                    }
-                })?,
+                view: matches.value_of("view").unwrap().parse()?,
+                viewport: Viewport::new(
+                    matches.value_of("width").unwrap().parse()?,
+                    matches.value_of("height").unwrap().parse()?,
+                ),
             },
         };
 
@@ -144,8 +144,7 @@ impl Default for GridConfig {
             char_dead: CHAR_DEAD,
             min_width: 10,
             min_height: 10,
-            max_width: 30,
-            max_height: 30,
+            viewport: Viewport::new(10, 10),
         }
     }
 }
