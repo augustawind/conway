@@ -38,8 +38,8 @@ where
         (@arg dead_char: -x --("dead-char") +takes_value "character used to render dead cells")
         (@arg view: -v --view possible_values(VIEW_CHOICES) default_value[fixed]
             "viewing mode")
-        (@arg width: -w --width default_value("20") "viewport width")
-        (@arg height: -h --height default_value("10") "viewport height")
+        (@arg width: -w --width "viewport width")
+        (@arg height: -h --height "viewport height")
     ).get_matches_from(args)
 }
 
@@ -54,8 +54,8 @@ pub struct Settings {
     pub tick_delay: Duration,
     pub view: View,
 
-    pub width: u64,
-    pub height: u64,
+    pub width: Option<u64>,
+    pub height: Option<u64>,
 
     pub char_alive: char,
     pub char_dead: char,
@@ -79,8 +79,8 @@ impl ConfigReader {
 
                 view: matches.value_of("view").unwrap().parse()?,
 
-                width: matches.value_of("width").unwrap().parse()?,
-                height: matches.value_of("height").unwrap().parse()?,
+                width: matches.value_of("width").map(str::parse).transpose()?,
+                height: matches.value_of("height").map(str::parse).transpose()?,
 
                 char_alive: matches
                     .value_of("live_char")
@@ -113,8 +113,8 @@ impl Default for Settings {
         Settings {
             tick_delay: Duration::from_millis(500),
             view: View::Centered,
-            width: 10,
-            height: 10,
+            width: Some(10),
+            height: Some(10),
             char_alive: CHAR_ALIVE,
             char_dead: CHAR_DEAD,
         }

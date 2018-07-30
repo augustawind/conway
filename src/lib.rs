@@ -1,3 +1,5 @@
+#![feature(transpose_result)]
+
 #[macro_use]
 #[cfg(test)]
 extern crate maplit;

@@ -89,16 +89,8 @@ impl Game {
         // set min dimensions to at least the starting Grid's natural size
         let viewport = Viewport {
             origin,
-            width: if opts.width == 0 {
-                width
-            } else {
-                opts.width
-            },
-            height: if opts.height == 0 {
-                height
-            } else {
-                opts.height
-            },
+            width: opts.width.unwrap_or(width),
+            height: opts.height.unwrap_or(height),
             scroll: Cell(0, 0),
         };
 
@@ -280,8 +272,8 @@ mod test {
                 Game::new(
                     Grid::new(vec![Cell(2, 1), Cell(-3, 0), Cell(-2, 1), Cell(-2, 0)]),
                     Settings {
-                        width: 7,
-                        height: 7,
+                        width: Some(7),
+                        height: Some(7),
                         ..Default::default()
                     }
                 ).viewport_centered(),
@@ -298,9 +290,9 @@ mod test {
                     Grid::new(vec![Cell(53, 4), Cell(2, 1), Cell(-12, 33)]),
                     Settings {
                         // adjust width: 88 - 66 = +22 / 2 => x0 - 11, x1 + 11
-                        width: 88,
+                        width: Some(88),
                         // adjust height: 12 - 33 = -21 / 2 => y0 + 10, y1 - 11
-                        height: 12,
+                        height: Some(12),
                         ..Default::default()
                     }
                 ).viewport_centered(),
@@ -318,9 +310,9 @@ mod test {
                     Grid::new(vec![Cell(2, 3), Cell(3, 3), Cell(5, 4), Cell(4, 2)]),
                     Settings {
                         // adjust width: 10 - 4 = +6 / 2 => x0 - 3, x1 + 3
-                        width: 10,
+                        width: Some(10),
                         // adjust height: 3 - 3 = 0 => N/A
-                        height: 3,
+                        height: Some(3),
                         ..Default::default()
                     }
                 ).viewport_centered(),
