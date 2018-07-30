@@ -84,6 +84,10 @@ impl Game {
             }
         }
     }
+
+    pub fn scroll(&mut self, dx: i64, dy: i64) {
+        self.grid.scroll(dx, dy);
+    }
 }
 
 #[cfg(test)]
