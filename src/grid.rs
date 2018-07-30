@@ -382,10 +382,11 @@ mod test {
                 pattern,
                 char_alive,
                 char_dead,
+                view: View::Centered,
                 min_width: 5,
                 min_height: 5,
-                view: View::Centered,
-                viewport: Viewport::new(8, 8),
+                width: 8,
+                height: 8,
             };
             let grid = Grid::from_config(config.clone()).unwrap();
 
