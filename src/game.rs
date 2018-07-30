@@ -1,7 +1,8 @@
 use std::mem;
 use std::thread;
 
-use config::{ConfigSet, GameConfig};
+use config::ConfigSet;
+pub use config::GameConfig;
 use grid::{Cell, Grid};
 use AppResult;
 

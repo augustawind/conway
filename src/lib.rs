@@ -6,6 +6,7 @@ extern crate clap;
 
 extern crate num_integer;
 
+pub mod cell;
 pub mod config;
 pub mod game;
 pub mod grid;
@@ -14,7 +15,8 @@ use std::error::Error;
 use std::fmt;
 use std::io;
 
-pub use config::{ConfigSet, GameConfig, GridConfig};
+pub use cell::Cell;
+pub use config::{GameConfig, GridConfig};
 pub use game::Game;
 pub use grid::{Grid, View};
 
