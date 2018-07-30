@@ -116,10 +116,8 @@ impl Grid {
         Grid::from_config(config)
     }
 
-    pub fn from_config(mut config: GridConfig) -> AppResult<Self> {
+    pub fn from_config(config: GridConfig) -> AppResult<Self> {
         let mut cells = Vec::new();
-        let mut width = 0;
-        let mut height = 0;
 
         for (y, line) in config
             .pattern
@@ -128,8 +126,6 @@ impl Grid {
             .filter(|line| !line.starts_with('#'))
             .enumerate()
         {
-            height += 1;
-            width = cmp::max(width, line.len() as u64);
             for (x, ch) in line.chars().enumerate() {
                 // Living Cells are added to the Grid.
                 if ch == config.char_alive {
@@ -139,11 +135,6 @@ impl Grid {
                     return Err(From::from(format!("unknown character: '{}'", ch)));
                 }
             }
-
-            config.min_width = width;
-            config.min_height = height;
-            config.max_width = width;
-            config.max_height = height;
         }
 
         Ok(Grid::new(cells, config))
@@ -332,6 +323,7 @@ fn split_int<T: Integer + Copy>(n: T) -> (T, T) {
 #[cfg(test)]
 mod test {
     use super::*;
+    use config::GridConfig;
     use std::default::Default;
 
     mod constructors {
@@ -368,28 +360,45 @@ mod test {
         }
 
         #[test]
-        fn test_from_str() {
-            use config::{CHAR_ALIVE, CHAR_DEAD};
+        fn test_from_config() {
+            let (char_alive, char_dead) = ('!', '_');
             let pattern = vec![
-                format!("{}{}", CHAR_ALIVE, CHAR_ALIVE),
-                format!("{}{}{}", CHAR_DEAD, CHAR_DEAD, CHAR_ALIVE),
-                format!("{}{}{}", CHAR_DEAD, CHAR_ALIVE, CHAR_DEAD),
+                format!("{}{}", char_alive, char_alive),
+                format!("{}{}{}", char_dead, char_dead, char_alive),
+                format!("{}{}{}", char_dead, char_alive, char_dead),
             ].join("\n");
-            let grid: Grid = pattern.parse().unwrap();
+            let config = GridConfig {
+                pattern,
+                char_alive,
+                char_dead,
+                view: View::Centered,
+                min_width: 5,
+                min_height: 5,
+                max_width: 12,
+                max_height: 12,
+            };
+            let grid = Grid::from_config(config.clone()).unwrap();
 
             assert_eq!(
                 grid,
-                Grid::new(
-                    vec![Cell(0, 0), Cell(1, 0), Cell(2, 1), Cell(1, 2)],
-                    GridConfig {
-                        pattern,
-                        min_width: 3,
-                        min_height: 3,
-                        max_width: 3,
-                        max_height: 3,
-                        ..Default::default()
-                    }
-                ),
+                Grid::new(vec![Cell(0, 0), Cell(1, 0), Cell(2, 1), Cell(1, 2)], config),
+            );
+        }
+
+        #[test]
+        fn test_from_str() {
+            use config::{CHAR_ALIVE, CHAR_DEAD};
+            let grid: Grid = vec![
+                format!("{}{}", CHAR_ALIVE, CHAR_ALIVE),
+                format!("{}{}{}", CHAR_DEAD, CHAR_DEAD, CHAR_ALIVE),
+                format!("{}{}{}", CHAR_DEAD, CHAR_ALIVE, CHAR_DEAD),
+            ].join("\n")
+                .parse()
+                .unwrap();
+
+            assert_eq!(
+                grid.cells,
+                hashset![Cell(0, 0), Cell(1, 0), Cell(2, 1), Cell(1, 2)],
             );
             assert!(Grid::from_str("abc\ndef").is_err())
         }
