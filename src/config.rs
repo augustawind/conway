@@ -72,15 +72,6 @@ pub struct GridConfig {
     pub pattern: String,
 }
 
-impl GridConfig {
-    pub fn read_pattern<P: AsRef<Path>>(path: P) -> AppResult<String> {
-        let mut f = File::open(path)?;
-        let mut pattern = String::new();
-        f.read_to_string(&mut pattern)?;
-        Ok(pattern)
-    }
-}
-
 impl ConfigSet {
     pub fn from_env() -> AppResult<ConfigSet> {
         ConfigSet::from_args(env::args_os())
@@ -113,14 +104,19 @@ impl ConfigSet {
                     .map_or(Ok(CHAR_DEAD), FromStr::from_str)?,
             },
             grid: GridConfig {
-                pattern: GridConfig::read_pattern({
-                    if let Some(file) = matches.value_of("file") {
+                pattern: {
+                    let path = if let Some(file) = matches.value_of("file") {
                         Path::new(file).to_path_buf()
                     } else {
                         let file = matches.value_of("sample").unwrap();
                         Path::new(SAMPLE_DIR).join(file)
-                    }
-                })?,
+                    };
+
+                    let mut f = File::open(path)?;
+                    let mut pattern = String::new();
+                    f.read_to_string(&mut pattern)?;
+                    pattern
+                },
             },
         };
 

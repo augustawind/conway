@@ -1,10 +1,9 @@
 use std::collections::HashSet;
-use std::path::Path;
 use std::str::FromStr;
 
 pub use cell::Cell;
 pub use config::GridConfig;
-use {AppError, AppResult};
+use AppError;
 
 pub const READ_CHAR_ALIVE: char = 'x';
 pub const READ_CHAR_DEAD: char = '.';
@@ -16,20 +15,11 @@ pub struct Grid {
 }
 
 impl Grid {
-    /*
-     * Constructors
-     */
-
     /// Create a new Grid.
     pub fn new(cells: Vec<Cell>) -> Self {
         Grid {
             cells: cells.into_iter().collect(),
         }
-    }
-
-    pub fn from_path<P: AsRef<Path>>(path: P) -> AppResult<Self> {
-        let pattern = GridConfig::read_pattern(path)?;
-        pattern.parse()
     }
 
     /*
