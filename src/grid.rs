@@ -217,7 +217,7 @@ impl Grid {
     }
 
     pub fn scroll(&mut self, dx: i64, dy: i64) {
-        self.viewport.scroll = self.viewport.scroll + Cell(dx, dy);
+        self.viewport.scroll = self.viewport.scroll - Cell(dx, dy);
     }
 
     /*
