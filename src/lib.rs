@@ -5,6 +5,8 @@
 extern crate maplit;
 #[macro_use]
 extern crate clap;
+#[macro_use]
+extern crate lazy_static;
 
 extern crate num_integer;
 

@@ -4,7 +4,6 @@ use std::ffi::OsString;
 use std::fs::File;
 use std::io::prelude::*;
 use std::path::Path;
-use std::str::FromStr;
 use std::time::Duration;
 
 use clap::ArgMatches;
@@ -15,8 +14,13 @@ use AppResult;
 static SAMPLE_DIR: &str = "./sample_patterns";
 static SAMPLE_CHOICES: &[&str] = &["beacon", "glider", "blinker", "toad"];
 static VIEW_CHOICES: &[&str] = &["centered", "fixed", "follow"];
-pub const CHAR_ALIVE: char = '#';
-pub const CHAR_DEAD: char = '-';
+
+lazy_static! {
+    static ref DEFAULT_CHAR_ALIVE: &'static str = "#";
+    static ref DEFAULT_CHAR_DEAD: &'static str = "-";
+    pub static ref CHAR_ALIVE: char = DEFAULT_CHAR_ALIVE.parse().unwrap();
+    pub static ref CHAR_DEAD: char = DEFAULT_CHAR_DEAD.parse().unwrap();
+}
 
 fn parse_args<'a, I, T>(args: I) -> ArgMatches<'a>
 where
@@ -34,12 +38,14 @@ where
                 "load a sample pattern")
         )
         (@arg delay: -d --delay default_value("500") "delay (ms) between ticks")
-        (@arg live_char: -o --("live-char") +takes_value "character used to render live cells")
-        (@arg dead_char: -x --("dead-char") +takes_value "character used to render dead cells")
+        (@arg live_char: -o --("live-char") default_value(*DEFAULT_CHAR_ALIVE)
+            "character used to render live cells [default: ]")
+        (@arg dead_char: -x --("dead-char") default_value(*DEFAULT_CHAR_DEAD)
+            "character used to render dead cells")
         (@arg view: -v --view possible_values(VIEW_CHOICES) default_value[fixed]
             "viewing mode")
-        (@arg width: -w --width +takes_value "viewport width")
-        (@arg height: -h --height +takes_value "viewport height")
+        (@arg width: -w --width +takes_value "viewport width [default: auto]")
+        (@arg height: -h --height +takes_value "viewport height [default: auto]")
     ).get_matches_from(args)
 }
 
@@ -82,12 +88,8 @@ impl ConfigReader {
                 width: matches.value_of("width").map(str::parse).transpose()?,
                 height: matches.value_of("height").map(str::parse).transpose()?,
 
-                char_alive: matches
-                    .value_of("live_char")
-                    .map_or(Ok(CHAR_ALIVE), FromStr::from_str)?,
-                char_dead: matches
-                    .value_of("dead_char")
-                    .map_or(Ok(CHAR_DEAD), FromStr::from_str)?,
+                char_alive: matches.value_of("live_char").unwrap().parse()?,
+                char_dead: matches.value_of("dead_char").unwrap().parse()?,
             },
             pattern: {
                 let path = if let Some(file) = matches.value_of("file") {
@@ -115,8 +117,8 @@ impl Default for Settings {
             view: View::Centered,
             width: Some(10),
             height: Some(10),
-            char_alive: CHAR_ALIVE,
-            char_dead: CHAR_DEAD,
+            char_alive: *CHAR_ALIVE,
+            char_dead: *CHAR_DEAD,
         }
     }
 }
