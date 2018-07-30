@@ -53,7 +53,7 @@ impl Viewport {
 pub struct Grid {
     cells: HashSet<Cell>,
     opts: GridConfig,
-    viewport: Viewport,
+    pub viewport: Viewport,
 }
 
 impl Grid {

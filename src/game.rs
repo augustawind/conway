@@ -66,6 +66,7 @@ impl Game {
             }
         }
         self.grid.clear();
+        mem::swap(&mut self.grid.viewport, &mut self.swap.viewport);
         mem::swap(&mut self.grid, &mut self.swap);
     }
 
