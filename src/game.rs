@@ -6,7 +6,7 @@ use num_integer::Integer;
 
 use config::ConfigReader;
 pub use config::Settings;
-use grid::{Cell, Grid};
+use grid::{Grid, Point};
 use {AppError, AppResult};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -31,8 +31,8 @@ impl FromStr for View {
 
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub struct Viewport {
-    origin: Cell,
-    scroll: Cell,
+    origin: Point,
+    scroll: Point,
     width: u64,
     height: u64,
 }
@@ -82,7 +82,7 @@ impl Game {
         let mut swap = grid.clone();
         swap.clear();
 
-        let (origin, Cell(x1, y1)) = grid.calculate_bounds();
+        let (origin, Point(x1, y1)) = grid.calculate_bounds();
         let (width, height) = ((x1 - origin.0 + 1) as u64, (y1 - origin.1 + 1) as u64);
 
         // FIXME: implement Option instead of relying on 0
@@ -91,7 +91,7 @@ impl Game {
             origin,
             width: opts.width.unwrap_or(width),
             height: opts.height.unwrap_or(height),
-            scroll: Cell(0, 0),
+            scroll: Point(0, 0),
         };
 
         Game {
@@ -110,11 +110,11 @@ impl Game {
         self.draw_viewport(self.viewport())
     }
 
-    fn draw_viewport(&self, (Cell(x0, y0), Cell(x1, y1)): (Cell, Cell)) -> String {
+    fn draw_viewport(&self, (Point(x0, y0), Point(x1, y1)): (Point, Point)) -> String {
         let mut output = String::new();
         for y in y0..=y1 {
             for x in x0..=x1 {
-                output.push(if self.grid.is_alive(&Cell(x, y)) {
+                output.push(if self.grid.is_alive(&Point(x, y)) {
                     self.opts.char_alive
                 } else {
                     self.opts.char_dead
@@ -126,10 +126,10 @@ impl Game {
     }
 
     pub fn scroll(&mut self, dx: i64, dy: i64) {
-        self.viewport.scroll = self.viewport.scroll - Cell(dx, dy);
+        self.viewport.scroll = self.viewport.scroll - Point(dx, dy);
     }
 
-    pub fn viewport(&self) -> (Cell, Cell) {
+    pub fn viewport(&self) -> (Point, Point) {
         match &self.opts.view {
             View::Fixed => self.viewport_fixed(),
             View::Centered => self.viewport_centered(),
@@ -137,17 +137,17 @@ impl Game {
         }
     }
 
-    pub fn viewport_fixed(&self) -> (Cell, Cell) {
-        let Cell(x0, y0) = self.viewport.origin + self.viewport.scroll;
-        let p1 = Cell(
+    pub fn viewport_fixed(&self) -> (Point, Point) {
+        let Point(x0, y0) = self.viewport.origin + self.viewport.scroll;
+        let p1 = Point(
             x0 + self.viewport.width as i64,
             y0 + self.viewport.height as i64,
         );
-        (Cell(x0, y0), p1)
+        (Point(x0, y0), p1)
     }
 
-    pub fn viewport_centered(&self) -> (Cell, Cell) {
-        let (Cell(x0, y0), Cell(x1, y1)) = self.grid.calculate_bounds();
+    pub fn viewport_centered(&self) -> (Point, Point) {
+        let (Point(x0, y0), Point(x1, y1)) = self.grid.calculate_bounds();
         let (width, height) = (x1 - x0 + 1, y1 - y0 + 1);
 
         let (dx, dy) = (
@@ -156,7 +156,7 @@ impl Game {
         );
 
         let ((dx0, dx1), (dy0, dy1)) = (split_int(dx), split_int(dy));
-        (Cell(x0 - dx0, y0 - dy0), Cell(x1 + dx1, y1 + dy1))
+        (Point(x0 - dx0, y0 - dy0), Point(x1 + dx1, y1 + dy1))
     }
 
     /// Return whether the Game is over. This happens with the Grid is empty.
@@ -166,7 +166,7 @@ impl Game {
 
     /// Execute the next turn in the Game of Life.
     ///
-    /// `tick` applies the rules of game to each individual Cell, killing some and reviving others.
+    /// `tick` applies the rules of game to each individual Point, killing some and reviving others.
     pub fn tick(&mut self) {
         for cell in self.grid.active_cells() {
             if self.survives(&cell) {
@@ -177,8 +177,8 @@ impl Game {
         mem::swap(&mut self.grid, &mut self.swap);
     }
 
-    /// Survives returns whether the given Cell survives an application of the Game Rules.
-    pub fn survives(&self, cell: &Cell) -> bool {
+    /// Survives returns whether the cell at the given Point survives an application of The Rules.
+    pub fn survives(&self, cell: &Point) -> bool {
         let live_neighbors = self.grid.live_neighbors(cell);
         if self.grid.is_alive(cell) {
             match live_neighbors {
@@ -208,7 +208,7 @@ mod test {
     // #[test]
     // fn test_min_size() {
     //     let game = Game::new(
-    //         Grid::new(vec![Cell(0, 0), Cell(5, 5)]),
+    //         Grid::new(vec![Point(0, 0), Point(5, 5)]),
     //         Settings {
     //             min_width: 8,
     //             min_height: 8,
@@ -221,7 +221,7 @@ mod test {
     // #[test]
     // fn test_min_size_override() {
     //     let game = Game::new(
-    //         Grid::new(vec![Cell(0, 0), Cell(5, 5)]),
+    //         Grid::new(vec![Point(0, 0), Point(5, 5)]),
     //         Settings {
     //             min_width: 3,
     //             min_height: 3,
@@ -238,27 +238,27 @@ mod test {
     #[test]
     fn test_survives_blinker() {
         let game = Game::new(
-            Grid::new(vec![Cell(1, 0), Cell(1, 1), Cell(1, 2)]),
+            Grid::new(vec![Point(1, 0), Point(1, 1), Point(1, 2)]),
             Default::default(),
         );
         assert!(
-            game.survives(&Cell(1, 1)),
+            game.survives(&Point(1, 1)),
             "a live cell with 2 live neighbors should survive"
         );
         assert!(
-            game.survives(&Cell(0, 1)),
+            game.survives(&Point(0, 1)),
             "a dead cell with 3 live neighbors should survive"
         );
         assert!(
-            game.survives(&Cell(2, 1)),
+            game.survives(&Point(2, 1)),
             "a dead cell with 3 live neighbors should survive"
         );
         assert!(
-            !game.survives(&Cell(1, 0)),
+            !game.survives(&Point(1, 0)),
             "a live cell with < 2 live neighbors should die"
         );
         assert!(
-            !game.survives(&Cell(1, 2)),
+            !game.survives(&Point(1, 2)),
             "a live cell with < 2 live neighbors should die"
         );
     }
@@ -270,14 +270,14 @@ mod test {
         fn test_viewport_centered_1() {
             assert_eq!(
                 Game::new(
-                    Grid::new(vec![Cell(2, 1), Cell(-3, 0), Cell(-2, 1), Cell(-2, 0)]),
+                    Grid::new(vec![Point(2, 1), Point(-3, 0), Point(-2, 1), Point(-2, 0)]),
                     Settings {
                         width: Some(7),
                         height: Some(7),
                         ..Default::default()
                     }
                 ).viewport_centered(),
-                (Cell(-3, -2), Cell(3, 4)),
+                (Point(-3, -2), Point(3, 4)),
                 "should pad content to fit width/height"
             );
         }
@@ -287,7 +287,7 @@ mod test {
             assert_eq!(
                 Game::new(
                     // natural size = 66 x 33
-                    Grid::new(vec![Cell(53, 4), Cell(2, 1), Cell(-12, 33)]),
+                    Grid::new(vec![Point(53, 4), Point(2, 1), Point(-12, 33)]),
                     Settings {
                         // adjust width: 88 - 66 = +22 / 2 => x0 - 11, x1 + 11
                         width: Some(88),
@@ -298,7 +298,7 @@ mod test {
                 ).viewport_centered(),
                 // x0[-12] - 11 = -23 // x1[53] + 11 = 64
                 // y0[1] + 10 = 11 // y1[33] - 11 = 22
-                (Cell(-23, 11), Cell(64, 22))
+                (Point(-23, 11), Point(64, 22))
             );
         }
 
@@ -307,7 +307,7 @@ mod test {
             assert_eq!(
                 Game::new(
                     // natural size = 4 x 3
-                    Grid::new(vec![Cell(2, 3), Cell(3, 3), Cell(5, 4), Cell(4, 2)]),
+                    Grid::new(vec![Point(2, 3), Point(3, 3), Point(5, 4), Point(4, 2)]),
                     Settings {
                         // adjust width: 10 - 4 = +6 / 2 => x0 - 3, x1 + 3
                         width: Some(10),
@@ -318,7 +318,7 @@ mod test {
                 ).viewport_centered(),
                 // x0[2] - 3 = -1 // x1[5] + 3 = 8
                 // y0[2] + 0 = 2 // y1[4] + 0 = 4
-                (Cell(-1, 2), Cell(8, 4)),
+                (Point(-1, 2), Point(8, 4)),
             );
         }
     }

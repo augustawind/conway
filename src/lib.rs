@@ -8,19 +8,19 @@ extern crate clap;
 
 extern crate num_integer;
 
-pub mod cell;
 pub mod config;
 pub mod game;
 pub mod grid;
+pub mod point;
 
 use std::error::Error;
 use std::fmt;
 use std::io;
 
-pub use cell::Cell;
 pub use config::Settings;
 pub use game::{Game, View};
 pub use grid::Grid;
+pub use point::Point;
 
 pub type AppResult<T> = Result<T, AppError>;
 
@@ -29,7 +29,7 @@ pub enum AppError {
     IO(io::Error),
     ParseInt(std::num::ParseIntError),
     ParseChar(std::char::ParseCharError),
-    ParseCell(String),
+    ParsePoint(String),
     Msg(String),
     WithCause(Box<AppError>, Box<Error + Send + Sync + 'static>),
 }
@@ -49,7 +49,7 @@ impl fmt::Display for AppError {
             AppError::IO(e) => ("IO failed".to_owned(), e.to_string()),
             AppError::ParseInt(e) => ("expected an integer".to_owned(), e.to_string()),
             AppError::ParseChar(e) => ("expected a single character".to_owned(), e.to_string()),
-            AppError::ParseCell(e) => ("failed to parse cell".to_owned(), e.to_string()),
+            AppError::ParsePoint(e) => ("failed to parse point".to_owned(), e.to_string()),
             AppError::Msg(e) => ("invalid input".to_owned(), e.to_string()),
             AppError::WithCause(e, cause) => (e.to_string(), cause.to_string()),
         };
