@@ -22,9 +22,10 @@ pub type AppResult<T> = Result<T, AppError>;
 
 #[derive(Debug)]
 pub enum AppError {
+    IO(io::Error),
     ParseInt(std::num::ParseIntError),
     ParseChar(std::char::ParseCharError),
-    IO(io::Error),
+    ParseCell(String),
     Msg(String),
     WithCause(Box<AppError>, Box<Error + Send + Sync + 'static>),
 }
@@ -41,11 +42,12 @@ impl AppError {
 impl fmt::Display for AppError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let (prefix, msg) = match self {
-            AppError::ParseInt(e) => ("expected an integer", e.to_string()),
-            AppError::ParseChar(e) => ("expected a single character", e.to_string()),
-            AppError::IO(e) => ("IO failed", e.to_string()),
-            AppError::Msg(e) => ("invalid input", e.to_string()),
-            AppError::WithCause(e, _) => return e.fmt(f),
+            AppError::IO(e) => ("IO failed".to_owned(), e.to_string()),
+            AppError::ParseInt(e) => ("expected an integer".to_owned(), e.to_string()),
+            AppError::ParseChar(e) => ("expected a single character".to_owned(), e.to_string()),
+            AppError::ParseCell(e) => ("failed to parse cell".to_owned(), e.to_string()),
+            AppError::Msg(e) => ("invalid input".to_owned(), e.to_string()),
+            AppError::WithCause(e, cause) => (e.to_string(), cause.to_string()),
         };
         write!(f, "conway: {}: {}", prefix, msg)
     }
